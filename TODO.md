@@ -57,8 +57,8 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
    - Test requirements (see Milestone 2).
 
 7. **License** (`license.rst`)
-   - Include license text or `.. include::` directive to `LICENSE` file.
-   - Create `LICENSE` file if it does not exist yet.
+   - Use `.. include:: ../../LICENSE` directive to render the root `LICENSE` file.
+   - `LICENSE` file exists in repo root (✅ done).
 
 ### Issue: Wire up toctree and verify docs build
 
@@ -184,10 +184,10 @@ Cover every decorator:
 - `core.py:387-391` — `if True:` block with redundant `.copy()` calls.
 - `core.py:385` — `transition = np.zeros(...)` is created, copied, reshaped, but never populated with meaningful data; verify intent.
 
-### Issue: Add `LICENSE` file
+### Issue: ~~Add `LICENSE` file~~ ✅ Done
 
-- No `LICENSE` file exists in the repo root.
-- Determine license and add the file.
+- `LICENSE` file added to repo root.
+- Referenced in `README.md` via link to `LICENSE`.
 
 ---
 
