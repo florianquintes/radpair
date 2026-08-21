@@ -24,21 +24,25 @@ Organized by milestone. Each section maps to one or more GitHub Issues.
 
 Restructure `docs/source/index.rst` and add the following pages under `docs/source/`:
 
-1. **Introduction** (`introduction.rst`)
+1. **Introduction** (`introduction.rst`) ✅ Done
    - What `radpair` does: analytic simulation of cw-EPR spectra of singlet-born spin-correlated radical pairs.
-   - Brief physics background and scope (up to five anisotropic nuclei groups).
+   - Physics background: analytic Hamiltonian solution, pseudo-secular approximation.
+   - Based on a Fortran 77 program from a thesis.
+   - **TODO**: Add reference to original thesis and publications (user will provide later).
+   - Module overview table added.
 
-2. **Installation** (`installation.rst`)
+2. **Installation** (`installation.rst`) ✅ Done
    - Prerequisites: Python 3.13, `uv`.
    - `uv sync --dev` for development install.
    - Note the `eprbase` dependency and where to get it.
 
-3. **Examples** (`examples.rst`)
+3. **Examples** (`examples.rst`) ✅ Done (placeholder)
    - End-to-end usage example: construct `Spinsystem`, `Exp`, `SimOpt` objects and call `do_simulation` / `do_simulation_multicore`.
    - Show required attributes for each object (document the dynamic-attribute interface).
    - Include a plotted sample spectrum if possible.
+   - **TODO**: Fill in worked examples in a future release.
 
-4. **API Reference** (`api_reference.rst`)
+4. **API Reference** (`api_reference.rst`) ✅ Done
    - Automate via `automodule` directives for `radpair.core`, `radpair.classes`, `radpair.functions`, `radpair._wrappers`.
    - Ensure every public function and class has a numpydoc-style docstring rendering correctly.
 
@@ -58,12 +62,12 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 
 ### Issue: ~~Wire up toctree and verify docs build~~ ✅ Done
 
-- All 7 `.rst` pages created (`introduction`, `installation`, `examples`, `api_reference`, `development`, `contributing`, `license`).
-- Toctree wired up in `index.rst`.
+- All 7 `.rst` pages created and filled (`introduction`, `installation`, `examples`, `api_reference`, `development`, `contributing`, `license`).
+- `index.rst` contains project overview and toctree.
 - API reference uses `automodule` directives with `:no-index:` to avoid duplicate descriptions.
-- License page includes `LICENSE` as a literal block.
+- License page references `LICENSE` file and GPLv3 summary.
 - Docs build passes with zero warnings.
-- Remaining: fill in `.rst` content (Issues #1–4, #6–7).
+- **Remaining**: Fill in worked examples (`examples.rst`); add literature reference to `introduction.rst`.
 
 ---
 

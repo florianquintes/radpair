@@ -1,4 +1,6 @@
 Examples
 ========
 
-.. Content to be filled in.
+.. note::
+
+   Worked examples will be added in a future release.

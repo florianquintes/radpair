@@ -1,7 +1,7 @@
 API Reference
 =============
 
-.. Content to be filled in.
+The API reference is generated automatically from the package source.
 
 .. automodule:: radpair.core
    :members:
