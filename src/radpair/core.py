@@ -17,6 +17,20 @@ import radpair.functions as fun
 from radpair._types import Experiment, SimulationOptions, Spinsystem
 from radpair._wrappers import multicore
 
+# Factor for converting a Gaussian FWHM to a squared sigma (in angular-frequency units).
+_GAUSSIAN_FWHM_TO_SIGMA = 4 * np.log(2)
+
+# Reference electron gyromagnetic ratio in rad s⁻¹ per milliTesla.
+# gamma = 2*pi * g * mu_B / h, with g = 2 (reference value, not g_e).
+# The 1e-3 factor converts from per-Tesla to per-milliTesla so that the
+# internal angular-frequency values are consistent with the milliTesla
+# field axis used throughout do_simulation.  The back-conversion
+# (res_fields / _GAMMA_E_REF * 1e3) cancels this factor, producing
+# resonance fields in milliTesla.
+# Previously hardcoded as ``tesang = 1.75880474e8``; now derived from
+# scipy.constants for traceability.
+_GAMMA_E_REF = 2 * np.pi * 2 * constant.value("Bohr magneton in Hz/T") * 1e-3
+
 
 def do_simulation(
     spinsystem: Spinsystem,
@@ -93,23 +107,21 @@ def do_simulation(
 
     "convert everything from Tesla to angular frequency"
 
-    tesang = 1.75880474e8
+    Sys.A1 *= _GAMMA_E_REF
+    Sys.A2 *= _GAMMA_E_REF
+    Sys.A3 *= _GAMMA_E_REF
+    Sys.A4 *= _GAMMA_E_REF
+    Sys.A5 *= _GAMMA_E_REF
 
-    Sys.A1 *= tesang
-    Sys.A2 *= tesang
-    Sys.A3 *= tesang
-    Sys.A4 *= tesang
-    Sys.A5 *= tesang
+    Sys.D *= _GAMMA_E_REF
+    Sys.E *= _GAMMA_E_REF
+    Sys.J_ex *= _GAMMA_E_REF
 
-    Sys.D *= tesang
-    Sys.E *= tesang
-    Sys.J_ex *= tesang
+    Sys.width_gauss *= _GAMMA_E_REF
+    Sys.width_gauss = Sys.width_gauss**2 / _GAUSSIAN_FWHM_TO_SIGMA
 
-    Sys.width_gauss *= tesang
-    Sys.width_gauss = Sys.width_gauss**2 / (4 * np.log(2))
-
-    freq_mw *= tesang
-    B_z *= tesang
+    freq_mw *= _GAMMA_E_REF
+    B_z *= _GAMMA_E_REF
 
     "some initialization"
     grid_ = grid.Grid(knots=simopt.grid_points)
@@ -367,7 +379,7 @@ def do_simulation(
     res_fields = np.squeeze(np.stack([B_12, B_34, B_13, B_24], axis=2), axis=3)
     delta_omega = 0.5 * (res_fields * g_m_g + A_2)
     quantum_beat = np.sqrt(dj_square + delta_omega**2)
-    dE_dB = (g_m_g**2 * res_fields**2 - g_m_g * A_2) * 0.5 / quantum_beat / tesang
+    dE_dB = (g_m_g**2 * res_fields**2 - g_m_g * A_2) * 0.5 / quantum_beat / _GAMMA_E_REF
 
     dB_12_dB = g_p_g[:, :, 0] - dE_dB[:, :, 0]
     dB_34_dB = g_p_g[:, :, 0] - dE_dB[:, :, 1]
@@ -390,7 +402,7 @@ def do_simulation(
     )
 
     "reformat results for interpolation"
-    res_fields = res_fields / tesang * 1e3
+    res_fields = res_fields / _GAMMA_E_REF * 1e3
     width = np.stack([width_1, width_2, width_3, width_4], axis=1)
 
     transition = np.zeros((*res_fields.shape, 2))

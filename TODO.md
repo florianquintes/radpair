@@ -177,10 +177,10 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 
 - `functions.py` — `nu: float or np.array` replaced with `nu: float | np.ndarray`; return type updated to `float | np.ndarray`.
 
-### Issue: Consolidate unit-conversion magic numbers
+### Issue: ~~Consolidate unit-conversion magic numbers~~ ✅ Done
 
-- `core.py:85` — `tesang = 1.75880474e8` is a hardcoded gyromagnetic ratio. Extract as a named constant (or use `scipy.constants`).
-- `core.py:98` — `4 * np.log(2)` is the FWHM-to-sigma factor for a Gaussian; name it.
+- `core.py` — `tesang = 1.75880474e8` replaced with module-level constant `_GAMMA_E_REF`, derived from `scipy.constants` as `2 * np.pi * 2 * constant.value("Bohr magneton in Hz/T") * 1e-3` (electron gyromagnetic ratio with g=2, in rad/s per milliTesla). All 13 usages updated. Comment explains the derivation, units, and the 1e-3 mT factor.
+- `core.py` — `4 * np.log(2)` replaced with `_GAUSSIAN_FWHM_TO_SIGMA` (FWHM-to-sigma² factor for Gaussian lineshape).
 
 ### Issue: ~~Improve docstrings to numpydoc / Sphinx-compatible style~~ ✅ Done
 
