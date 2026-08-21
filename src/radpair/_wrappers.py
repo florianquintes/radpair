@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Provide decorators and multicore helpers for simulation routines.
 
 © M. Sc. Florian Quintes, 2026

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
@@ -398,7 +397,7 @@ def do_simulation(Spinsystem: object, Exp: object, SimOpt: object) -> np.array:
 
     if interpolation_mode:
         data = (fields, intensities, widths, transitions)
-        
+
         interp_ = interp.Interpolator(theta_angles, phi_angles, data)
 
         fields = interp_.get_positions(theta_fine, phi_fine)

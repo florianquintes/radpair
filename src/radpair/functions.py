@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 """
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
 @author: Thresia Quintes, Florian Quintes
 """
+
 from functools import lru_cache
 
 import numpy as np
@@ -304,9 +304,7 @@ def MHz_2_T(nu: float or np.array, g_tensor: np.array) -> float:
 
     """
     if not (g_tensor > 0).all():
-        raise ValueError(
-            "All values of the g-Tensor need to be higher than 0!"
-        )
+        raise ValueError("All values of the g-Tensor need to be higher than 0!")
 
     mu_b = constant.value("Bohr magneton in Hz/T")
     g_iso = g_tensor.sum() / 3

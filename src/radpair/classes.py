@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 """
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
 @author: Thresia Quintes, Florian Quintes
 """
+
 import numpy as np
 
 import radpair.functions as fun
