@@ -12,6 +12,9 @@ import numpy as np
 
 import radpair.functions as fun
 
+# Column index of the z-component in a 3×3 tensor.
+_Z_COLUMN = 2
+
 
 class Matrix:
     """Represent an ``n×n`` matrix and provide rotation operations.
@@ -70,7 +73,7 @@ class Matrix:
             the number of orientations.  The *i*-th element corresponds
             to the *i*-th orientation.
         """
-        return np.sqrt((self.matrix_rot[:, :, 2] ** 2).sum(axis=1))
+        return np.sqrt((self.matrix_rot[:, :, _Z_COLUMN] ** 2).sum(axis=1))
 
 
 class Core:

@@ -160,19 +160,18 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - `functions.py` — All `np.array` type hints replaced with `np.ndarray`; `psi` parameter typed as `np.ndarray | None`; return types added to all functions; `MHz_2_T` uses `float | np.ndarray` for both parameter and return.
 - `_wrappers.py` — `timer` uses PEP 695 type parameters (`[**P, R]`); `function_benchmark` returns `Callable[..., None]`; `multicore` returns `Callable[..., np.ndarray]`; inner `multicore_wrapper` uses Protocol types for parameters.
 
-### Issue: Eliminate anti-patterns
+### Issue: ~~Eliminate anti-patterns~~ ✅ Done
 
-- `core.py:387` — `if True:` block is a no-op; remove it.
-- `core.py:66-68` — Loop over `range(1, 6)` with hardcoded `A1`–`A5` access via `vars(Sys)`. This should be data-driven, not index-hardcoded.
-- `core.py:70-98` — Repeated per-attribute scaling (`Sys.A1 *= …` through `Sys.A5 *= …`). Replace with a loop.
-- `core.py:124-159` — Three near-identical `tilt_alpha`/`tilt_beta`/`tilt_gamma` arrays built manually. Generate programmatically.
-- `core.py:169-191` — Repeated `np.diag` and `cl.Matrix` calls for `a1`–`a5`. Loop over a list.
-- `core.py:208-217` — Five identical `if core_type["N"] == 0:` blocks. Loop.
-- `core.py:221-236` — Five identical `.matrot()` calls and five `get_hyperfine_projection()` calls. Loop.
-- `core.py:244-248` — Five identical `set_hyperfine_matrix` calls. Loop.
-- `core.py:264-295` — Five-deep nested `for` loop over `mI_1`…`mI_5`. Use `itertools.product`.
-- `core.py:366-369` — Four width variables assigned identically. Use a list/array.
-- `classes.py:81` — `get_hyperfine_projection` uses magic index `2` for z-column; document or make explicit.
+- `core.py` — `if True:` no-op block removed; variables renamed directly instead of copying.
+- `core.py` — `A1`–`A5` dtype conversion and scaling (0.5 and `_GAMMA_E_REF`) merged into a single `for i in range(1, 6)` loop using `vars(Sys)`.
+- `core.py` — Three near-identical `tilt_alpha`/`tilt_beta`/`tilt_gamma` arrays replaced with a single `frame_angles` array indexed by column.
+- `core.py` — Repeated `np.diag` calls for `a1`–`a5` replaced with a list comprehension; `cl.Matrix` construction uses a list comprehension for `a_matrices`.
+- `core.py` — Five `if core_type["N"] == 0:` blocks replaced with a single list comprehension.
+- `core.py` — Five `.matrot()` calls and five `get_hyperfine_projection()` calls replaced with a loop over `[g1, g2, D, *a_matrices]` and a list comprehension.
+- `core.py` — Five `set_hyperfine_matrix` calls replaced with a `zip` loop.
+- `core.py` — Five-deep nested `for` loop replaced with `itertools.product`.
+- `core.py` — Four width variables (`width_1`–`width_4`) and subsequent `np.stack` merged into a single `widths = 1 / np.stack(...)`.
+- `classes.py` — Magic index `2` in `get_hyperfine_projection` replaced with named constant `_Z_COLUMN`.
 
 ### Issue: ~~Replace `float or np.array` type annotation~~ ✅ Done
 
@@ -195,10 +194,10 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - `api_reference.rst` updated to include `radpair._types` automodule directive.
 - Docs build passes with zero warnings.
 
-### Issue: Remove dead / placeholder code
+### Issue: ~~Remove dead / placeholder code~~ ✅ Done
 
-- `core.py:387-391` — `if True:` block with redundant `.copy()` calls.
-- `core.py:385` — `transition = np.zeros(...)` is created, copied, reshaped, but never populated with meaningful data; verify intent.
+- `core.py` — `if True:` block with redundant `.copy()` calls removed. Variables (`res_fields`, `width`, `intensity`, `transition`) renamed directly to their final names (`fields`, `widths`, `intensities`, `transitions`) at the point of assignment, eliminating the unnecessary copy.
+- `core.py` — `transition = np.zeros(...)` (now `transitions`) is retained as a placeholder required by `spectra.Spectra()` and `interp.Interpolator()`; it is never populated with meaningful transition data but is structurally necessary for the API contract.
 
 ### Issue: ~~Add `LICENSE` file~~ ✅ Done
 
