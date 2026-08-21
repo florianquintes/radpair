@@ -120,32 +120,33 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
   - `multicore` (4 tests): output matches single-core concatenation, `cpu_cores=0` auto-detects, single core, uneven split.
   - Uses a trivial `_identity_simulation` function (no `eprbase` dependency) to test `multicore` in isolation.
 
-### Issue: Tests for `radpair/core.py` — `do_simulation`
+### Issue: ~~Tests for `radpair/core.py` — `do_simulation`~~ ✅ Done
 
-- Test with a minimal 1-nucleus system (only `A1`, others zeroed out via `Core(0, 0)`).
-- Test with a 5-nucleus system exercising all cores.
-- Verify output shape matches `Exp.B_z` (or `Exp.magnetic_field`).
-- Verify output is real-valued and contains no NaNs (`np.nan_to_num` is called, but assert).
-- Test `interpolation_mode` path (`SimOpt.refinement > 1`).
+- `tests/test_simulation_regression.py` — `TestDoSimulationInvariants` (11 tests):
+  - Output shape matches `Exp.B_z` for minimal (1-nucleus) and full (5-nucleus) systems.
+  - Output is real-valued (not complex) for both systems.
+  - No NaNs and no Infs in output for both systems.
+  - Interpolation mode (`refinement > 1`) produces correct shape, no NaNs, and different output than no-interpolation mode.
 
-### Issue: Tests for `radpair/core.py` — `do_simulation_multicore`
+### Issue: ~~Tests for `radpair/core.py` — `do_simulation_multicore`~~ ✅ Done
 
-- Verify multicore output matches single-core output (same inputs).
-- Test with `SimOpt.cpu_cores = 0` (auto-detect).
-- Test with `SimOpt.cpu_cores = 1` (degenerate case).
+- `tests/test_simulation_regression.py` — `TestDoSimulationMulticore` (4 tests):
+  - Multicore (2 cores) output matches single-core output for minimal and full systems.
+  - `cpu_cores = 0` (auto-detect) produces correct shape and no NaNs.
+  - `cpu_cores = 1` (degenerate case) matches single-core output.
 
-### Issue: Create reference test spectra and end-to-end comparison tests
+### Issue: ~~Create reference test spectra and end-to-end comparison tests~~ ✅ Done
 
-- Create `tests/data/` directory.
-- Simulate several representative systems using the current code and save the output spectra as `.npy` or `.npz` files in `tests/data/`.
-- Suggested reference cases:
-  1. Minimal system — 1 nucleus, 1 donor, no ZFS.
-  2. Full system — 5 nuclei, mixed donor/acceptor, nonzero D/E/J.
-  3. System with interpolation enabled (`refinement > 1`).
-  4. System with only donor nuclei.
-  5. System with only acceptor nuclei.
-- Add a test module `tests/test_simulation_regression.py` that loads each reference spectrum and asserts `np.allclose(result, reference, rtol=...)`.
-- Document the procedure to regenerate reference data (script or fixture with `--regenerate` flag).
+- `tests/reference_data/` directory contains 7 `.npz` files (S1–S7) with field axis, intensity, and all input parameters as metadata.
+- `tests/generate_reference_spectra.py` — script to regenerate reference data (`uv run python tests/generate_reference_spectra.py`).
+- `tests/plot_reference_spectra.py` — generates `all_spectra.pdf` combined plot.
+- `tests/reference_data/README.md` — full documentation with per-spectrum parameter tables, coverage matrix, and regeneration instructions.
+- `tests/test_simulation_regression.py` — end-to-end regression tests (14 tests):
+  - 7 parametrized `test_reference_spectrum[S1–S7]` tests: load each `.npz`, reconstruct inputs from metadata, re-run `do_simulation`, assert `np.allclose(result, reference, rtol=1e-10, atol=1e-12)`.
+  - `test_reference_spectra_have_nonzero_variance` — all spectra have meaningful structure.
+  - `test_reference_spectra_have_negative_and_positive` — spin-correlated RP hallmark (both absorptive and emissive lines).
+  - `test_swap_pair_s3_s4_have_similar_sums` — donor/acceptor swap preserves spectral sum.
+- Coverage: 0–5 nuclei groups, iso/aniso g-tensors, iso/aniso A-tensors, donor-only/mixed/acceptor-heavy, I=½+1+3/2, n=1+2+3, zero/nonzero D/E/J, zero/nonzero frames, donor/acceptor swap pair.
 
 ---
 
