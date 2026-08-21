@@ -1,17 +1,18 @@
-.. radpair documentation master file, created by
-   sphinx-quickstart on Thu Aug 20 16:31:17 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. radpair documentation master file
 
-radpair documentation
-=====================
+radpair
+=======
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Analytic simulation of cw-EPR spectra of singlet-born spin-correlated radical pairs.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
+   installation
+   examples
+   api_reference
+   development
+   contributing
+   license

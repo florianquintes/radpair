@@ -56,11 +56,14 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
    - Use `.. include:: ../../LICENSE` directive to render the root `LICENSE` file.
    - `LICENSE` file exists in repo root (✅ done).
 
-### Issue: Wire up toctree and verify docs build
+### Issue: ~~Wire up toctree and verify docs build~~ ✅ Done
 
-- Add all new `.rst` pages to the `.. toctree::` in `index.rst`.
-- Run `uv run sphinx-build -b html docs/source docs/build/html` locally and fix warnings.
-- Verify docs.yml CI workflow passes on push to `main`/`develop`.
+- All 7 `.rst` pages created (`introduction`, `installation`, `examples`, `api_reference`, `development`, `contributing`, `license`).
+- Toctree wired up in `index.rst`.
+- API reference uses `automodule` directives with `:no-index:` to avoid duplicate descriptions.
+- License page includes `LICENSE` as a literal block.
+- Docs build passes with zero warnings.
+- Remaining: fill in `.rst` content (Issues #1–4, #6–7).
 
 ---
 
