@@ -1,7 +1,7 @@
 [project]
 name = "radpair"
 version = "0.1.0"
-description = "Add your description here"
+description = "Analytic simulation of cw-EPR spectra of singlet-born spin-correlated radical pairs"
 readme = "README.md"
 authors = [
     { name = "Florian Quintes", email = "florian.quintes@pc.uni-freiburg.de" }
