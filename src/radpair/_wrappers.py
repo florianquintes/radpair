@@ -2,7 +2,7 @@
 
 © M. Sc. Florian Quintes, 2026
 
-@contact: florian.quintes@pc.uni.freiburg.de
+@contact: florian.quintes@pc.uni-freiburg.de
 
 @author: Florian Quintes
 """
@@ -16,8 +16,10 @@ from typing import Any
 
 import numpy as np
 
+from radpair._types import Experiment, SimulationOptions, Spinsystem
 
-def timer(func: Callable) -> Callable:
+
+def timer[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     """Measure the wall-clock runtime of a single function call.
 
     Parameters
@@ -31,7 +33,7 @@ def timer(func: Callable) -> Callable:
         Wrapper that prints the runtime and returns the original result.
     """
 
-    def time_wrap(*args: Any, **kwargs: Any) -> Any:
+    def time_wrap(*args: P.args, **kwargs: P.kwargs) -> R:
         start = time()
         res = func(*args, **kwargs)
         runtime = time() - start
@@ -41,7 +43,9 @@ def timer(func: Callable) -> Callable:
     return time_wrap
 
 
-def function_benchmark(func: Callable, niter: int = 100) -> Callable:
+def function_benchmark(
+    func: Callable[..., Any], niter: int = 100
+) -> Callable[..., None]:
     """Run *func* *niter* times and print best, worst, and average runtime.
 
     Parameters
@@ -49,12 +53,13 @@ def function_benchmark(func: Callable, niter: int = 100) -> Callable:
     func : callable
         Function which will be benchmarked.
     niter : int, optional
-        Number of function calls. The default is 100.
+        Number of function calls (default is 100).
 
     Returns
     -------
     callable
         Wrapper that runs the benchmark and prints timing statistics.
+        The wrapper does **not** return the original result.
     """
 
     def benchmarked_function(*args: Any, **kwargs: Any) -> None:
@@ -82,40 +87,47 @@ def function_benchmark(func: Callable, niter: int = 100) -> Callable:
     return benchmarked_function
 
 
-def multicore(simulation: Callable) -> Callable:
+def multicore(
+    simulation: Callable[..., np.ndarray],
+) -> Callable[..., np.ndarray]:
     """Parallelise a simulation routine using :class:`multiprocessing.Pool`.
 
-    The decorated function must accept ``(Sys, Exp, SimOpt)`` and is
-    executed on ``SimOpt.cpu_cores`` processes, each handling a slice of
-    the magnetic-field axis.
+    The decorated function must accept ``(spinsystem, experiment, simopt)``
+    and is executed on ``simopt.cpu_cores`` processes, each handling a
+    slice of the magnetic-field axis.
 
     Parameters
     ----------
     simulation : callable
-        Simulation function with the signature ``(Sys, Exp, SimOpt)``.
+        Simulation function with the signature
+        ``(spinsystem, experiment, simopt) -> np.ndarray``.
 
     Returns
     -------
     callable
-        Wrapper with signature ``(Sys, Exp, SimOpt)`` that distributes
-        the work across CPU cores and returns the concatenated spectrum.
+        Wrapper with the same signature that distributes the work across
+        CPU cores and returns the concatenated spectrum.
     """
 
-    def multicore_wrapper(Sys: Any, Exp: Any, SimOpt: Any) -> np.ndarray:
-        if SimOpt.cpu_cores == 0:
-            SimOpt.cpu_cores = cpu_count()
+    def multicore_wrapper(
+        spinsystem: Spinsystem,
+        experiment: Experiment,
+        simopt: SimulationOptions,
+    ) -> np.ndarray:
+        if simopt.cpu_cores == 0:
+            simopt.cpu_cores = cpu_count()
 
-        whole_spectrum = 1 * Exp.magnetic_field
-        whole_B_z = 1 * Exp.B_z
+        whole_spectrum = 1 * experiment.magnetic_field
+        whole_B_z = 1 * experiment.B_z
         n_field_points = whole_spectrum.shape[0]
 
-        points_per_core = n_field_points // SimOpt.cpu_cores
+        points_per_core = n_field_points // simopt.cpu_cores
 
-        Exp_list = np.empty(SimOpt.cpu_cores, dtype=object)
-        for core in range(SimOpt.cpu_cores):
-            Experimental = deepcopy(Exp)
+        Exp_list = np.empty(simopt.cpu_cores, dtype=object)
+        for core in range(simopt.cpu_cores):
+            Experimental = deepcopy(experiment)
             start = core * points_per_core
-            if core + 1 < SimOpt.cpu_cores:
+            if core + 1 < simopt.cpu_cores:
                 end = (core + 1) * points_per_core
                 Experimental.magnetic_field = whole_spectrum[start:end]
                 Experimental.B_z = whole_B_z[start:end]
@@ -124,9 +136,9 @@ def multicore(simulation: Callable) -> Callable:
                 Experimental.B_z = whole_B_z[start:]
             Exp_list[core] = Experimental
 
-        pool = Pool(processes=SimOpt.cpu_cores)
+        pool = Pool(processes=simopt.cpu_cores)
         single_intensities = pool.starmap(
-            simulation, zip(repeat(Sys), Exp_list, repeat(SimOpt))
+            simulation, zip(repeat(spinsystem), Exp_list, repeat(simopt))
         )
         pool.close()
         pool.join()

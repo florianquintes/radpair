@@ -1,4 +1,8 @@
-"""
+"""Math helper functions for the radpair package.
+
+Provides unit conversion, tensor rotation, Pascal-triangle generation,
+Fibonacci-sphere grid points, and spherical-coordinate conversion.
+
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
 @author: Thresia Quintes, Florian Quintes
@@ -11,44 +15,46 @@ import scipy.constants as constant
 
 
 def tensor_rotation(
-    tensor: np.array, phi: np.array, theta: np.array, psi: np.array = None
-) -> np.array:
-    r"""
-    Algorithm:
-    Euler transformation using y-convention. The euler matrix is set up
-    with the given angles. Phi and theta is necessary, psi is optional.
-    The euler matrix O of the SO(3) Group in y-convention is set up in already
-    multiplicated form. Than the orthogonal similarity transformation of the
-    tensor T is carried out:
+    tensor: np.ndarray,
+    phi: np.ndarray,
+    theta: np.ndarray,
+    psi: np.ndarray | None = None,
+) -> np.ndarray:
+    r"""Rotate a tensor (or batch of tensors) via Euler transformation.
+
+    The Euler matrix *O* of the SO(3) group is set up in y-convention
+    (already in multiplied form) and the orthogonal similarity
+    transformation is carried out:
 
     .. math::
 
-        T' = O^{-1}\cdot T \cdot O
+        T' = O^{\mathsf{T}} \cdot T \cdot O
 
-    with:
-
-    .. math::
-
-        O^{-1} = O^T
-
+    where :math:`O^{-1} = O^{\mathsf{T}}` (orthogonality).
 
     Parameters
     ----------
-    tensor : np.array
-        Tensor which should be rotated using Euler transformation
-        (y-convention).
-    phi : float
-        Phi angle in radian for transformation.
-    theta : float
-        Theta angle in radian for transformation.
-    psi : float, optional
-        Psi angle in radian for transformation. The default is None.
+    tensor : np.ndarray
+        Tensor to be rotated.  A single 2-D array of shape ``(3, 3)``
+        or a batch of 2-D arrays of shape ``(N, 3, 3)``.
+    phi : np.ndarray
+        Phi (Euler) angles in radians, shape ``(N,)``.
+    theta : np.ndarray
+        Theta (Euler) angles in radians, shape ``(N,)``.
+    psi : np.ndarray, optional
+        Psi (Euler) angles in radians, shape ``(N,)``.  If ``None``,
+        zeros are used (default).
 
     Returns
     -------
-    rotatedTensor : np.array
-        Rotated tensor.
+    np.ndarray
+        Rotated tensor(s).  Shape matches the input ``tensor`` except
+        that the leading dimension becomes ``N`` (the number of angles).
 
+    Raises
+    ------
+    ValueError
+        If ``tensor`` does not have 2 or 3 dimensions.
     """
     if psi is None:
         psi = np.zeros(phi.size)
@@ -75,30 +81,34 @@ def tensor_rotation(
         rot_1 = np.einsum("aij, ajk -> aik", tensor, eulermatrix)
     else:
         raise ValueError("Tensor has wrong dimensions!")
-    rotatedTensor = np.einsum("aji, ajk -> aik", eulermatrix, rot_1)
+    rotated_tensor = np.einsum("aji, ajk -> aik", eulermatrix, rot_1)
 
-    return rotatedTensor
+    return rotated_tensor
 
 
 @lru_cache
 def get_multiplicity(spin: float) -> int:
-    """
-    Get the multiplicity of a core with spin I:
+    r"""Return the multiplicity of a particle with spin *S*.
 
     .. math::
-        M = 2S + 1.
+
+        M = 2S + 1
 
     Parameters
     ----------
     spin : float
-        Magnetic spin of a quantum particle.
+        Magnetic spin quantum number (must be non-negative and a
+        multiple of 0.5).
 
     Returns
     -------
-    multiplicity : int
-        Multiplicity of a quantum particle with a given spin in an external
-        magnetic field due to Zeeman splitting.
+    int
+        Multiplicity (number of Zeeman levels).
 
+    Raises
+    ------
+    ValueError
+        If ``spin`` is negative or not a multiple of 0.5.
     """
     if spin < 0.0:
         raise ValueError("Spin can't be negative!")
@@ -110,34 +120,31 @@ def get_multiplicity(spin: float) -> int:
     return multiplicity
 
 
-def vector_product_combinations(a: np.array, b: np.array) -> np.array:
-    """
-    Multiply each value of a given numpy.array with each value of another one.
+def vector_product_combinations(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Compute the outer product of two 1-D arrays.
 
-    ::
-
-        [1 2 3] * [4 5 6]
-
-    will give you:
-    ::
-
-            [ 4  5  6]
-        M = [ 8 10 12]
-            [12 15 18]
+    Given two vectors, returns a matrix containing all pairwise products.
 
     Parameters
     ----------
-    a : np.array
-        First array. Used as column vector.
-    b : np.array
-        Second array. Used as line vector.
+    a : np.ndarray
+        First 1-D array (used as column vector).
+    b : np.ndarray
+        Second 1-D array (used as row vector).
 
     Returns
     -------
-    matrix : np.array
-        Matrix containing the products of all permutations of all values from
-        one vector with the other.
+    np.ndarray
+        Matrix of shape ``(len(a), len(b))`` containing the products
+        of all permutations of values from ``a`` with values from ``b``.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> vector_product_combinations(np.array([1, 2, 3]), np.array([4, 5, 6]))
+    array([[ 4,  5,  6],
+           [ 8, 10, 12],
+           [12, 15, 18]])
     """
     matrix = a.reshape((1, a.shape[0])).T * b
 
@@ -145,9 +152,12 @@ def vector_product_combinations(a: np.array, b: np.array) -> np.array:
 
 
 @lru_cache
-def get_generalized_Pascal(number: int, spin: float) -> np.array:
-    """
-    Get a generalized Pascal triangle for a given number of atoms and spin.
+def get_generalized_Pascal(number: int, spin: float) -> np.ndarray:
+    """Compute a generalized Pascal triangle for ``number`` nuclei of spin ``spin``.
+
+    Returns the relative intensities of the hyperfine lines for a group
+    of ``number`` chemically equivalent nuclei with magnetic spin
+    ``spin``.
 
     (c) Stephan Rein
     Modified by: Florian Quintes
@@ -155,16 +165,23 @@ def get_generalized_Pascal(number: int, spin: float) -> np.array:
     Parameters
     ----------
     number : int
-        Number of coupling atoms.
+        Number of chemically equivalent nuclei (>= 0).
     spin : float
-        Magnetic spin of a quantum particle.
+        Magnetic spin quantum number (>= 0, multiple of 0.5).
 
     Returns
     -------
-    np.array
-        Array containing the relativ intensities of 'number' coupling atoms
-        with magnetic spin 'spin'.
+    np.ndarray
+        Array of relative intensities.  For ``number == 0`` returns
+        ``[1]``.
 
+    Raises
+    ------
+    ValueError
+        If ``number`` or ``spin`` is negative, or ``spin`` is not a
+        multiple of 0.5.
+    TypeError
+        If ``number`` is not an integer.
     """
     if number < 0.0:
         raise ValueError("Number can't be negativ!")
@@ -198,24 +215,23 @@ def get_generalized_Pascal(number: int, spin: float) -> np.array:
 
 
 @lru_cache
-def get_normalized_Pascal(number: int, spin: float) -> np.array:
-    """
-    Get a generalized Pascal triangle for a given number of atoms and spin. The
-    sum of all intensities is 1..
+def get_normalized_Pascal(number: int, spin: float) -> np.ndarray:
+    """Compute a normalized generalized Pascal triangle (sum = 1).
+
+    Wraps :func:`get_generalized_Pascal` and rescales the result so
+    that all intensities sum to 1.
 
     Parameters
     ----------
     number : int
-        Number of coupling atoms.
+        Number of chemically equivalent nuclei (>= 0).
     spin : float
-        Magnetic spin of a quantum particle.
+        Magnetic spin quantum number (>= 0, multiple of 0.5).
 
     Returns
     -------
-    pascal_line : np.array
-        Array containing the relativ intensities of 'number' coupling atoms
-        with magnetic spin 'spin'.
-
+    np.ndarray
+        Normalized array of relative intensities summing to 1.
     """
     pascal_line = get_generalized_Pascal(number, spin)
     pascal_line = rescale_array(pascal_line)
@@ -223,26 +239,25 @@ def get_normalized_Pascal(number: int, spin: float) -> np.array:
     return pascal_line
 
 
-def rescale_array(arr: np.array, norm: float = 1.0) -> np.array:
-    """
-    Rescale a given 1d array to a given norm. Default is 1.
-
-    ::
-
-        [1. 3. 4.] -> [0.125 0.375, 0.5]
+def rescale_array(arr: np.ndarray, norm: float = 1.0) -> np.ndarray:
+    """Rescale a 1-D array so that its elements sum to ``norm``.
 
     Parameters
     ----------
-    arr : np.array
-        Numpy 1d-array which will be rescaled.
+    arr : np.ndarray
+        1-D array to be rescaled.
     norm : float, optional
-        New sum of all array values. The default is 1..
+        Target sum of all array values (default is 1.0).
 
     Returns
     -------
-    scaled_arr : np.array
+    np.ndarray
         Rescaled array.
 
+    Raises
+    ------
+    ZeroDivisionError
+        If the array sums to zero.
     """
     if arr.sum() == 0:
         raise ZeroDivisionError("Can't rescale an array with sum 0!")
@@ -252,56 +267,63 @@ def rescale_array(arr: np.array, norm: float = 1.0) -> np.array:
     return scaled_arr
 
 
-def get_D_diag(D: float, E: float) -> np.array:
-    """
-    Get the diagonal elements of the resulting D-Tensor.
+def get_D_diag(D: float, E: float) -> np.ndarray:
+    r"""Return the diagonal elements of the ZFS *D*-tensor.
 
-    ::
+    The diagonal tensor is constructed from the zero-field splitting
+    parameters *D* and *E* as:
 
-            [D-E    0   0]
-        D = [   0 D+E   0]
-            [   0    0 -2*D]
+    .. math::
+
+        \mathrm{diag}(D) = \begin{pmatrix} D - E & 0 & 0 \\
+                0 & D + E & 0 \\
+                0 & 0 & -2D \end{pmatrix}
 
     Parameters
     ----------
     D : float
-        ZFS parameter D.
+        ZFS parameter *D*.
     E : float
-        ZFS parameter E.
+        ZFS parameter *E*.
 
     Returns
     -------
-    D_diag : np.array
-        Array containing the diagonal elements of the D-Tensor.
-
+    np.ndarray
+        Array of shape ``(3,)`` containing the diagonal elements.
     """
     D_diag = np.array([D - E, D + E, -2 * D])
 
     return D_diag
 
 
-def MHz_2_T(nu: float or np.array, g_tensor: np.array) -> float:
-    r"""
-    Convert a given MHz value to a corresponding tesla value with respect to
-    the given g-Tensor.
+def MHz_2_T(nu: float | np.ndarray, g_tensor: np.ndarray) -> float | np.ndarray:
+    r"""Convert a frequency in MHz to the corresponding magnetic field in Tesla.
+
+    The conversion uses the isotropic g-value and the Bohr magneton:
 
     .. math::
 
-        \\nu_{\mathrm{Tesla}} = \\frac{\\nu_{\mathrm{MHz}}}
-        {g_{\mathrm{iso}}\cdot\\mu_{B}\cdot10^{-3}}
+        B = \frac{\nu_{\mathrm{MHz}} \times 10^{6}}
+        {g_{\mathrm{iso}} \cdot \mu_{B} \times 10^{-3}}
 
     Parameters
     ----------
-    nu : float or np.array
-        Frequency in MHz.
-    g_tensor : np.array
-        g-Tensor of the electron.
+    nu : float or np.ndarray
+        Frequency (or array of frequencies) in MHz.
+    g_tensor : np.ndarray
+        g-tensor diagonal elements, shape ``(3,)``.  All values must be
+        positive.
 
     Returns
     -------
-    nu_tesla : float
-        Frequency in Tesla.
+    float or np.ndarray
+        Magnetic field in Tesla (scalar if ``nu`` is scalar, array
+        otherwise).
 
+    Raises
+    ------
+    ValueError
+        If any element of ``g_tensor`` is not positive.
     """
     if not (g_tensor > 0).all():
         raise ValueError("All values of the g-Tensor need to be higher than 0!")
@@ -314,44 +336,31 @@ def MHz_2_T(nu: float or np.array, g_tensor: np.array) -> float:
 
 
 def sphere_fibonacci_grid_points(ng: int) -> np.ndarray:
-    """
-    Calculate Fibonacci spiral gridpoints on a sphere.
+    """Calculate Fibonacci-spiral grid points on a unit sphere.
 
     Parameters
     ----------
     ng : int
-        Number of points that shall be calculated.
+        Number of grid points to generate.
 
     Returns
     -------
-    xg : np.ndarray
-        Coordinates of the desired number of grid points. The three cartesian
-        coordinates are given. The shape of the array is 3xng.
+    np.ndarray
+        Cartesian coordinates of the grid points, shape ``(ng, 3)``.
 
-    Licensing
-    ---------
+    Notes
+    -----
+    This code is distributed under the GNU LGPL license.
+    Original source:
+    https://people.sc.fsu.edu/~jburkardt/py_src/sphere_fibonacci_grid/sphere_fibonacci_grid.py
 
-      This code is distributed under the GNU LGPL license.
-      https://people.sc.fsu.edu/~jburkardt/py_src/sphere_fibonacci_grid/sphere_fibonacci_grid.py
-
-    Modified
-    --------
-
-      15 May 2015
-
-    Author
-    ------
-
-      John Burkardt
+    Modified 15 May 2015 by John Burkardt.
 
     Reference
     ---------
-
-      Richard Swinbank, James Purser,
-      Fibonacci grids: A novel approach to global modelling,
-      Quarterly Journal of the Royal Meteorological Society,
-      Volume 132, Number 619, July 2006 Part B, pages 1769-1793.
-
+    Richard Swinbank, James Purser, "Fibonacci grids: A novel approach
+    to global modelling", Quarterly Journal of the Royal Meteorological
+    Society, Volume 132, Number 619, July 2006 Part B, pages 1769-1793.
     """
     phi = (1.0 + np.sqrt(5.0)) / 2.0
 
@@ -376,22 +385,20 @@ def sphere_fibonacci_grid_points(ng: int) -> np.ndarray:
 
 
 def cartesian2spherical(xyz: np.ndarray) -> np.ndarray:
-    """
-    Convert a set of three cartesian coordinates (x, y and z) to a set of
-    three spherical coordinates (r, theta and phi).
+    """Convert Cartesian coordinates to spherical coordinates.
 
     Parameters
     ----------
     xyz : np.ndarray
-        This array contains n sets of cartesian coordinates x, y and z.
-        Therefore, it describes n Points and its shape is 3xn.
+        Cartesian coordinates ``(x, y, z)`` for *n* points, shape
+        ``(n, 3)``.
 
     Returns
     -------
-    rtp : np.ndarray
-        This array contains the transformed sets of xyz. First argument is
-        the radius r, second and third are the angles theta and phi.
-
+    np.ndarray
+        Spherical coordinates ``(r, theta, phi)`` for each point,
+        shape ``(3, n)``.  Here *theta* is the polar angle (from the
+        z-axis) and *phi* is the azimuthal angle (from the x-axis).
     """
     r = np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2 + xyz[:, 2] ** 2)
     theta = np.arctan2(np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2), xyz[:, 2])
@@ -402,23 +409,20 @@ def cartesian2spherical(xyz: np.ndarray) -> np.ndarray:
 
 
 @lru_cache
-def get_fibonacci_sphere(points: int) -> tuple[np.array, np.array]:
-    """
-    Get a fibonacci sphere in spherical coordinates. Either by loading a saved
-    one or by calculating a new one.
+def get_fibonacci_sphere(points: int) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a Fibonacci sphere in spherical coordinates.
 
     Parameters
     ----------
     points : int
-        Number of points of the fibonacci sphere.
+        Number of grid points on the sphere.
 
     Returns
     -------
-    theta : np.array
-        Array with theta values of the fibonacci sphere.
-    phi : np.array
-        Array with phi values of the fibonacci sphere.
-
+    theta : np.ndarray
+        Polar angles (from the z-axis) of the grid points.
+    phi : np.ndarray
+        Azimuthal angles (from the x-axis) of the grid points.
     """
     xyz = sphere_fibonacci_grid_points(points)
     _, theta, phi = cartesian2spherical(xyz)

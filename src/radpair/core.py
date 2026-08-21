@@ -1,4 +1,5 @@
-"""
+"""Core simulation routines for cw-EPR spectra of radical pairs.
+
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
 @author: Thresia Quintes, Florian Quintes
@@ -13,34 +14,45 @@ from eprbase import interpolation as interp
 
 import radpair.classes as cl
 import radpair.functions as fun
+from radpair._types import Experiment, SimulationOptions, Spinsystem
 from radpair._wrappers import multicore
 
 
-def do_simulation(Spinsystem: object, Exp: object, SimOpt: object) -> np.array:
-    """
-    Simulate a cw-EPR spectrum for a spin correlated radical pair with up to
-    five anisotropic nuclei groups. Each nuclei group can be donor or
-    acceptor.
+def do_simulation(
+    spinsystem: Spinsystem,
+    experiment: Experiment,
+    simopt: SimulationOptions,
+) -> np.ndarray:
+    """Simulate a cw-EPR spectrum for a spin-correlated radical pair.
+
+    Solves the spin Hamiltonian analytically using a pseudo-secular
+    approximation for the hyperfine couplings.  Supports up to five
+    anisotropic nuclei groups, each assignable to the donor or acceptor
+    radical.  Zero-field splitting (*D*, *E*) and exchange interaction
+    (*J*) are included.
 
     Parameters
     ----------
-    Spinsystem : object
-        Spinsystem object from module spinanalysis.epr.
-    Exp : object
-        Experimental object from module spinanalysis.epr.
-    SimOpt : object
-        SimulationOptions object from module spinanalysis.epr.
+    spinsystem : Spinsystem
+        Spin-system object describing the radical pair.  See the
+        :class:`~radpair._types.Spinsystem` protocol for required
+        attributes.
+    experiment : Experiment
+        Experiment object with the magnetic-field axis and microwave
+        frequency.  See the :class:`~radpair._types.Experiment` protocol.
+    simopt : SimulationOptions
+        Simulation options (grid density, interpolation, CPU cores).
+        See the :class:`~radpair._types.SimulationOptions` protocol.
 
     Returns
     -------
-    intensity : np.array
-        Array containing the real part of the simulated spectrum.
-
+    np.ndarray
+        Real-valued intensity array of the simulated spectrum, matching
+        the shape of ``experiment.B_z``.
     """
-
-    Sys = deepcopy(Spinsystem)
-    B_z = 1 * Exp.B_z
-    freq_mw = 1 * Exp.freq_mw
+    Sys = deepcopy(spinsystem)
+    B_z = 1 * experiment.B_z
+    freq_mw = 1 * experiment.freq_mw
 
     "Transforming everything to Tesla"
     mu_b = constant.value("Bohr magneton in Hz/T")
@@ -100,14 +112,14 @@ def do_simulation(Spinsystem: object, Exp: object, SimOpt: object) -> np.array:
     B_z *= tesang
 
     "some initialization"
-    grid_ = grid.Grid(knots=SimOpt.grid_points)
+    grid_ = grid.Grid(knots=simopt.grid_points)
     sym = "Ci"
     spherical = grid_.get_grid(sym)
     theta_angles, phi_angles = spherical[:, 1], spherical[:, 2]
 
-    interpolation_mode = SimOpt.refinement > 1
+    interpolation_mode = simopt.refinement > 1
     if interpolation_mode:
-        grid_fine = grid.Grid(knots=SimOpt.grid_points * int(SimOpt.refinement))
+        grid_fine = grid.Grid(knots=simopt.grid_points * int(simopt.refinement))
         spherical_fine = grid_fine.get_grid(sym)
         theta_fine, phi_fine = spherical_fine[:, 1], spherical_fine[:, 2]
         weights = grid_fine.get_areas()[np.newaxis, :]
@@ -411,39 +423,45 @@ def do_simulation(Spinsystem: object, Exp: object, SimOpt: object) -> np.array:
     spectra_ = spectra.Spectra(
         fields,
         intensities * spec_weights,
-        Spinsystem.width_gauss * widths,
+        spinsystem.width_gauss * widths,
         transitions,
         weights=weights,
     )
-    intensity = spectra_.by_summation(Exp.B_z)
+    intensity = spectra_.by_summation(experiment.B_z)
 
     return np.nan_to_num(intensity)
 
 
-def do_simulation_multicore(Sys: object, Exp: object, SimOpt: object) -> np.array:
-    """
-    Simulate a cw-EPR spectrum for a spin correlated radical pair with up to
-    five anisotropic nuclei groups. Each nuclei group can be donor or
-    acceptor. For better performance, multiple cpu cores will be used.
-    Recommended for a single simulation.
+def do_simulation_multicore(
+    spinsystem: Spinsystem,
+    experiment: Experiment,
+    simopt: SimulationOptions,
+) -> np.ndarray:
+    """Simulate a cw-EPR spectrum using multiple CPU cores.
 
+    Wraps :func:`do_simulation` with the :func:`~radpair._wrappers.multicore`
+    decorator, which splits the magnetic-field axis across
+    ``simopt.cpu_cores`` processes via :class:`multiprocessing.Pool`.
+    Recommended for single simulations where wall-clock time matters.
 
     Parameters
     ----------
-    Spinsystem : object
-        Spinsystem object from module spinanalysis.epr.
-    Exp : object
-        Experimental object from module spinanalysis.epr.
-    SimOpt : object
-        SimulationOptions object from module spinanalysis.epr.
+    spinsystem : Spinsystem
+        Spin-system object (see :class:`~radpair._types.Spinsystem`).
+    experiment : Experiment
+        Experiment object (see :class:`~radpair._types.Experiment`).
+    simopt : SimulationOptions
+        Simulation options (see :class:`~radpair._types.SimulationOptions`).
+        ``simopt.cpu_cores`` controls the number of worker processes
+        (``0`` = auto-detect).
 
     Returns
     -------
-    intensity : np.array
-        Array containing the real part of the simulated spectrum.
-
+    np.ndarray
+        Real-valued intensity array of the simulated spectrum, matching
+        the shape of ``experiment.B_z``.
     """
     multicore_sim = multicore(do_simulation)
-    intensity = multicore_sim(Sys, Exp, SimOpt)
+    intensity = multicore_sim(spinsystem, experiment, simopt)
 
     return intensity

@@ -18,3 +18,7 @@ The API reference is generated automatically from the package source.
 .. automodule:: radpair._wrappers
    :members:
    :no-index:
+
+.. automodule:: radpair._types
+   :members:
+   :no-index:

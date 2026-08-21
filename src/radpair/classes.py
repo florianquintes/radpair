@@ -1,4 +1,8 @@
-"""
+"""Helper classes for the radpair package.
+
+Provides :class:`Matrix` (tensor rotation) and :class:`Core` (nuclei
+group) used by :func:`radpair.core.do_simulation`.
+
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
 @author: Thresia Quintes, Florian Quintes
@@ -10,124 +14,103 @@ import radpair.functions as fun
 
 
 class Matrix:
-    """
-    Get an object representing a nxn-matrix in its initial state.
+    """Represent an ``n×n`` matrix and provide rotation operations.
 
     Attributes
     ----------
-    matrix : np.array
-        Tensor in its initial state.
-    matrix_rot : np.array
-        Rotated matrices.
-
-    Methods
-    -------
-    matrot(phi, theta, psi=0.)
-        Rotate the matrix using Euler transformation (y-convention).
+    matrix : np.ndarray
+        Tensor in its initial (eigenbasis) state.
+    matrix_rot : np.ndarray or None
+        Rotated matrices (``None`` until :meth:`matrot` is called).
     """
 
-    def __init__(self, mat: np.array) -> None:
-        """
-        Initialize a matrix in his eigenbasis.
+    def __init__(self, mat: np.ndarray) -> None:
+        """Initialize a matrix in its eigenbasis.
 
         Parameters
         ----------
-        diag : np.array
-            Diagonal elements of the matrix.
-
-        Returns
-        -------
-        None.
-
+        mat : np.ndarray
+            The matrix (typically a 3×3 diagonal tensor) in its
+            eigenbasis.
         """
         self.matrix = mat
-        self.matrix_rot = None
+        self.matrix_rot: np.ndarray | None = None
 
-    def matrot(self, phi: float, theta: float, psi: float = 0):
-        """
-        Rotate the matrix using Euler transformation (y-convention) without
-        changing self.matrix.
+    def matrot(self, phi: np.ndarray, theta: np.ndarray, psi: np.ndarray = 0.0) -> None:
+        """Rotate the matrix using Euler transformation (y-convention).
+
+        The result is stored in ``self.matrix_rot`` without modifying
+        ``self.matrix``.
 
         Parameters
         ----------
-        phi : float
-            Phi angle in radian for transformation.
-        theta : float
-            Theta angle in radian for transformation.
-        psi : float, optional
-            Psi angle in radian for transformation. The default is 0..
-
-        Returns
-        -------
-        None.
-
+        phi : np.ndarray
+            Phi angles in radians for the transformation.
+        theta : np.ndarray
+            Theta angles in radians for the transformation.
+        psi : np.ndarray, optional
+            Psi angles in radians for the transformation (default 0.0).
         """
         self.matrix_rot = fun.tensor_rotation(self.matrix, phi, theta, psi)
 
-    def get_hyperfine_projection(self) -> np.array:
-        r"""
-        Get the hyperfine projection. Only needed for hyperfine tensors.
+    def get_hyperfine_projection(self) -> np.ndarray:
+        r"""Compute the effective hyperfine coupling for each orientation.
+
+        Only applicable to hyperfine tensors.  The effective coupling is
+        the Euclidean norm of the third column of the rotated matrix:
 
         .. math::
+
             A_{\mathrm{eff}} = \sqrt{A_{xz}^2 + A_{yz}^2 + A_{zz}^2}
 
         Returns
         -------
-        np.array (N,)
-            All effective hyperfine couplings. i'th hyperfine coupling
-            corresponds to the i'th orientation.
-
+        np.ndarray
+            Effective hyperfine couplings, shape ``(N,)``, where *N* is
+            the number of orientations.  The *i*-th element corresponds
+            to the *i*-th orientation.
         """
         return np.sqrt((self.matrix_rot[:, :, 2] ** 2).sum(axis=1))
 
 
 class Core:
-    """
-    Get an object representing a given number of chemically equivalent nuclei.
+    """Represent a group of chemically equivalent nuclei.
 
     Attributes
     ----------
     number : int
         Number of coupling nuclei.
     spin : float
-        Magnetic spin of one nuclei.
+        Magnetic spin of one nucleus.
     total_spin : float
-        Magnetic spin of all nuclei.
-    pascal : np.array
-        Intensity distribution given by a Pascal triangle.
+        Total magnetic spin of all nuclei (``number * spin``).
+    pascal : np.ndarray
+        Intensity distribution from a (normalized) Pascal triangle.
     mI_len : int
-        length of the mI_vector.
-    mI_vector : np.array
-        Object of class 'Vector' with all m_I values.
-    hyperfine_matrix :
-        Matrix with all hyperfine couplings for every m_I value.
-
-    Methods
-    -------
-    set_hyperfine_matrix(hyperfine_arr)
-        Set up the hyperfine matrix using the hyperfine couplings and
-        self.mI_vector.
-    get_magnetic_spin_vector()
-        Get the mI_vector.
-
+        Length of the ``mI_vector``.
+    mI_vector : np.ndarray
+        Array of all magnetic spin projection values.
+    hyperfine_matrix : np.ndarray
+        Matrix of hyperfine couplings for every ``m_I`` value.
     """
 
     def __init__(self, number: int, spin: float) -> None:
-        """
-        Initialize an object representing a given number of chemically
-        equivalent nuclei.
+        """Initialize a group of chemically equivalent nuclei.
 
         Parameters
         ----------
         number : int
-            Number of coupling atoms.
+            Number of coupling nuclei (>= 0).
         spin : float
-            Magnetic spin of a quantum particle.
+            Magnetic spin quantum number (>= 0, multiple of 0.5).
 
-        Returns
-        -------
-        None.
-
+        Raises
+        ------
+        ValueError
+            If ``number`` or ``spin`` is negative, or ``spin`` is not a
+            multiple of 0.5.
+        TypeError
+            If ``number`` is not an integer.
         """
         if number < 0.0:
             raise ValueError("Number can't be negativ!")
@@ -145,27 +128,28 @@ class Core:
         self.pascal = fun.get_normalized_Pascal(self.number, self.spin)
         self.mI_len = self.mI_vector.size
 
-    def set_hyperfine_matrix(self, hyperfine_arr: np.array):
-        """
-        Set up the hyperfine matrix using the hyperfine array and the magnet
-        spin vector.
+    def set_hyperfine_matrix(self, hyperfine_arr: np.ndarray) -> None:
+        """Set up the hyperfine matrix from coupling constants.
+
+        Computes the outer product of the magnetic spin vector with the
+        hyperfine coupling array and stores the result in
+        ``self.hyperfine_matrix``.
 
         Parameters
         ----------
-        hyperfine_arr : np.array
-            Array with the hyperfine coupling constants.
-
-        Returns
-        -------
-        None.
-
+        hyperfine_arr : np.ndarray
+            Array of hyperfine coupling constants for each orientation.
         """
         self.hyperfine_matrix = fun.vector_product_combinations(
             self.mI_vector, hyperfine_arr
         )
 
-    def get_magnetic_spin_vector(self):
-        """Get the magnetic spin vector as an object of class 'Vector'."""
+    def get_magnetic_spin_vector(self) -> None:
+        """Compute and store the magnetic spin projection vector.
+
+        Populates ``self.mI_vector`` with evenly spaced values from
+        ``-total_spin`` to ``+total_spin``.
+        """
         multi = fun.get_multiplicity(self.total_spin)
         m_I = self.total_spin
         self.mI_vector = np.linspace(-m_I, m_I, multi).astype(np.float32)

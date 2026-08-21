@@ -153,12 +153,13 @@ Cover every decorator:
 
 ## Milestone 3 — Codebase Refactoring (Pre-structure)
 
-### Issue: Add type annotations to all public and private functions
+### Issue: ~~Add type annotations to all public and private functions~~ ✅ Done
 
-- `core.py` — `do_simulation` and `do_simulation_multicore` use `object` for `Sys`/`Exp`/`SimOpt`. Introduce `Protocol` classes or `TypedDict` definitions describing the required attributes, and annotate accordingly.
-- `classes.py` — `Matrix.__init__` takes `np.array` (should be `np.ndarray`); `matrot` and `get_hyperfine_projection` need return types.
-- `functions.py` — Replace `np.array` type hints with `np.ndarray`; use `float | np.ndarray` instead of `float or np.array`; add return types everywhere.
-- `_wrappers.py` — Already partially typed; tighten `Any` where possible.
+- Created `src/radpair/_types.py` with `@runtime_checkable` `Protocol` classes (`Spinsystem`, `Experiment`, `SimulationOptions`) documenting all required attributes.
+- `core.py` — `do_simulation` and `do_simulation_multicore` now use the Protocol types instead of `object`; parameters renamed to lowercase (`spinsystem`, `experiment`, `simopt`).
+- `classes.py` — `Matrix.__init__` parameter typed as `np.ndarray`; `matrot` returns `-> None`; `get_hyperfine_projection` returns `-> np.ndarray`; `Core.set_hyperfine_matrix` returns `-> None`; `Core.get_magnetic_spin_vector` returns `-> None`; `matrix_rot` attribute typed as `np.ndarray | None`.
+- `functions.py` — All `np.array` type hints replaced with `np.ndarray`; `psi` parameter typed as `np.ndarray | None`; return types added to all functions; `MHz_2_T` uses `float | np.ndarray` for both parameter and return.
+- `_wrappers.py` — `timer` uses PEP 695 type parameters (`[**P, R]`); `function_benchmark` returns `Callable[..., None]`; `multicore` returns `Callable[..., np.ndarray]`; inner `multicore_wrapper` uses Protocol types for parameters.
 
 ### Issue: Eliminate anti-patterns
 
@@ -174,21 +175,26 @@ Cover every decorator:
 - `core.py:366-369` — Four width variables assigned identically. Use a list/array.
 - `classes.py:81` — `get_hyperfine_projection` uses magic index `2` for z-column; document or make explicit.
 
-### Issue: Replace `float or np.array` type annotation
+### Issue: ~~Replace `float or np.array` type annotation~~ ✅ Done
 
-- `functions.py:283` — `nu: float or np.array` is not valid Python type syntax. Use `float | np.ndarray`.
+- `functions.py` — `nu: float or np.array` replaced with `nu: float | np.ndarray`; return type updated to `float | np.ndarray`.
 
 ### Issue: Consolidate unit-conversion magic numbers
 
 - `core.py:85` — `tesang = 1.75880474e8` is a hardcoded gyromagnetic ratio. Extract as a named constant (or use `scipy.constants`).
 - `core.py:98` — `4 * np.log(2)` is the FWHM-to-sigma factor for a Gaussian; name it.
 
-### Issue: Improve docstrings to numpydoc / Sphinx-compatible style
+### Issue: ~~Improve docstrings to numpydoc / Sphinx-compatible style~~ ✅ Done
 
-- Ensure every function and class has a complete numpydoc docstring with `Parameters`, `Returns`, and where applicable `Raises`, `Notes`, `Examples`.
-- Use valid reST/LaTeX in math directives (currently some `.. math::` blocks have formatting issues).
-- `classes.py:35` — Docstring says `diag` but parameter is `mat`; fix mismatch.
-- `core.py:20` — Parameter is named `Spinsystem` but code uses `Sys = deepcopy(Spinsystem)`; standardize naming.
+- All functions and classes now have complete numpydoc docstrings with `Parameters`, `Returns`, and where applicable `Raises`, `Notes`, `Examples` sections.
+- `.. math::` directives fixed to use proper LaTeX (e.g. `O^{\mathsf{T}}` instead of `O^{-1}`).
+- `classes.py` — Docstring parameter mismatch fixed (`diag` → `mat`).
+- `core.py` — Parameters standardized to lowercase (`spinsystem`, `experiment`, `simopt`); docstrings reference the Protocol classes.
+- `functions.py` — Added `Examples` section to `vector_product_combinations`; `Raises` sections added to `tensor_rotation`, `get_multiplicity`, `get_generalized_Pascal`, `rescale_array`, `MHz_2_T`; `Notes` section added to `sphere_fibonacci_grid_points`.
+- `classes.py` — `Raises` sections added to `Core.__init__`; class-level docstrings improved with `Attributes` sections.
+- `_wrappers.py` — Module docstring added; all decorator docstrings improved.
+- `api_reference.rst` updated to include `radpair._types` automodule directive.
+- Docs build passes with zero warnings.
 
 ### Issue: Remove dead / placeholder code
 
