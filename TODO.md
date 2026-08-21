@@ -87,40 +87,38 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
   - Multicore auto-detect (`cpu_cores=0`).
 - All 14 tests pass; lint and format checks clean.
 
-### Issue: Tests for `radpair/functions.py`
+### Issue: ~~Tests for `radpair/functions.py`~~ ✅ Done
 
-Cover every function:
+- `tests/test_functions.py` — 48 tests across 11 test classes:
+  - `tensor_rotation` (8 tests): 2D/3D identity rotation, known-angle rotations (180° about z, 90° about z), `psi=None` default, invalid dimensions, multiple angles, orthogonality preservation.
+  - `get_multiplicity` (6 tests): parametrized valid spins (0, 0.5, 1, 1.5), negative spin error, non-half-integer error.
+  - `vector_product_combinations` (2 tests): shape and values.
+  - `get_generalized_Pascal` (8 tests): n=0 returns `[1]`, known cases (n=2/s=0.5→`[1,2,1]`, n=1/s=0.5→`[1,1]`, n=1/s=1→`[1,1,1]`), all error cases.
+  - `get_normalized_Pascal` (3 tests): sums to 1, n=0, matches rescaled generalized.
+  - `rescale_array` (4 tests): default norm, custom norm, values, zero-sum error.
+  - `get_D_diag` (3 tests): known D/E values, zero E, shape.
+  - `MHz_2_T` (4 tests): scalar, array, anisotropic g, negative-g error.
+  - `sphere_fibonacci_grid_points` (3 tests): shape, points on unit sphere, single point.
+  - `cartesian2spherical` (4 tests): output shape, unit x, unit z, round-trip.
+  - `get_fibonacci_sphere` (4 tests): lengths, theta range, phi range, cached behavior.
 
-- `tensor_rotation` — 2D and 3D tensor input, identity rotation, known-angle rotation, invalid dimensions.
-- `get_multiplicity` — spin 0, 0.5, 1, 1.5; negative spin error; non-0.5-multiple error.
-- `vector_product_combinations` — correct shape and values for small vectors.
-- `get_generalized_Pascal` — n=0 returns `[1]`, known cases (e.g., n=2 spin=0.5 → `[1,2,1]`), n=1 general spin, error cases.
-- `get_normalized_Pascal` — sums to 1.0, delegates to `get_generalized_Pascal`.
-- `rescale_array` — rescaling correctness, zero-sum error.
-- `get_D_diag` — known D/E values produce expected diagonal.
-- `MHz_2_T` — known conversion, all-positive g-tensor check, negative-g error.
-- `sphere_fibonacci_grid_points` — correct shape `(ng, 3)`, points on unit sphere.
-- `cartesian2spherical` — round-trip or known conversions, output shape `(3, n)`.
-- `get_fibonacci_sphere` — returns `(theta, phi)` of correct length, cached behavior.
+### Issue: ~~Tests for `radpair/classes.py`~~ ✅ Done
 
-### Issue: Tests for `radpair/classes.py`
+- `tests/test_classes.py` — 26 tests across 6 test classes:
+  - `Matrix.__init__` (2 tests): stores matrix, `matrix_rot` is `None`.
+  - `Matrix.matrot` (3 tests): identity rotation preserves matrix, original matrix unchanged, rotated shape.
+  - `Matrix.get_hyperfine_projection` (3 tests): isotropic diagonal, shape, all non-negative.
+  - `Core.__init__` (10 tests): stores number/spin, total_spin, zero core, pascal, mI_len, all error cases (negative number/spin, non-integer number, non-half-integer spin).
+  - `Core.set_hyperfine_matrix` (3 tests): shape, values, zero core.
+  - `Core.get_magnetic_spin_vector` (5 tests): spin-1/2 one/two nuclei, spin-1, dtype float32, symmetry.
 
-Cover every class and method:
+### Issue: ~~Tests for `radpair/_wrappers.py`~~ ✅ Done
 
-- `Matrix.__init__` — stores matrix, `matrix_rot` is `None`.
-- `Matrix.matrot` — rotation produces correct shape; identity rotation preserves matrix.
-- `Matrix.get_hyperfine_projection` — known tensor produces expected projection.
-- `Core.__init__` — stores number/spin, computes `total_spin`, validates negative/non-int/invalid-spin errors.
-- `Core.set_hyperfine_matrix` — correct shape and values for small input.
-- `Core.get_magnetic_spin_vector` — correct linspace for various spins.
-
-### Issue: Tests for `radpair/_wrappers.py`
-
-Cover every decorator:
-
-- `timer` — returns original result, prints runtime line (cap-sys).
-- `function_benchmark` — runs niter times, prints statistics, does not return the original result.
-- `multicore` — splits field axis correctly, `cpu_cores=0` resolves to `cpu_count()`, output matches single-core concatenation.
+- `tests/test_wrappers.py` — 11 tests across 3 test classes:
+  - `timer` (3 tests): returns original result, prints runtime line, preserves kwargs.
+  - `function_benchmark` (3 tests): does not return original result, prints statistics (average/best/worst), runs exactly niter times.
+  - `multicore` (4 tests): output matches single-core concatenation, `cpu_cores=0` auto-detects, single core, uneven split.
+  - Uses a trivial `_identity_simulation` function (no `eprbase` dependency) to test `multicore` in isolation.
 
 ### Issue: Tests for `radpair/core.py` — `do_simulation`
 
