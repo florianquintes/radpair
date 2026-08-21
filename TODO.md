@@ -6,23 +6,19 @@ Organized by milestone. Each section maps to one or more GitHub Issues.
 
 ## Milestone 1 — Documentation
 
-### Issue: Switch Sphinx theme to `sphinx-rtd-theme`
+### Issue: ~~Switch Sphinx theme to `sphinx-rtd-theme`~~ ✅ Done
 
-- Replace `alabaster` with `sphinx_rtd_theme` in `docs/source/conf.py`.
-- `sphinx-rtd-theme` is already a dev dependency; `conf.py` currently overrides it.
-- Remove the `html_theme = "alabaster"` override.
+- Replaced `alabaster` with `sphinx_rtd_theme` in `docs/source/conf.py`.
 
-### Issue: Auto-import version from `pyproject.toml`
+### Issue: ~~Auto-import version from `pyproject.toml`~~ ✅ Done
 
-- `conf.py` currently hardcodes `release = "0.1.0"`.
-- Use `importlib.metadata.version("radpair")` (or parse `pyproject.toml` via `tomllib`) to populate `version` and `release` dynamically.
-- Ensure this works in CI (package must be installed via `uv sync --dev`).
+- `conf.py` now uses `importlib.metadata.version("radpair")` to populate `version` and `release` dynamically.
 
-### Issue: Enable Sphinx extensions for autodoc
+### Issue: ~~Enable Sphinx extensions for autodoc~~ ✅ Done
 
-- Add `sphinx.ext.autodoc`, `sphinx.ext.napoleon`, and `sphinx-autodoc-typehints` to `extensions` in `conf.py`.
-- `sphinx-autodoc-typehints` is already a dev dependency but not activated.
-- Configure `autodoc_typehints = "description"` so type annotations render in prose.
+- Enabled `sphinx.ext.autodoc`, `sphinx.ext.napoleon`, `sphinx-autodoc-typehints`, and `sphinx-copybutton` in `conf.py`.
+- Configured `autodoc_typehints = "description"`.
+- Added `sphinx-copybutton` as dev dependency.
 
 ### Issue: Write documentation content — Introduction, Installation, Examples, API Reference, Development, Contributing, License
 
