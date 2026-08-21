@@ -73,11 +73,19 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 
 ## Milestone 2 — Tests
 
-### Issue: Set up test infrastructure
+### Issue: ~~Set up test infrastructure~~ ✅ Done
 
-- `tests/` is currently empty.
-- Create `tests/conftest.py` with shared fixtures (e.g., sample `Spinsystem`, `Exp`, `SimOpt` objects).
-- Fixtures should construct minimal valid objects with the dynamic-attribute interface `do_simulation` expects.
+- `tests/conftest.py` created with shared fixtures using `types.SimpleNamespace`:
+  - **Spinsystem fixtures**: `minimal_spinsystem` (1 donor nucleus, isotropic, no ZFS/exchange), `full_spinsystem` (3 active nuclei groups, anisotropic, nonzero D/E/J), `donor_only_spinsystem` (2 donor groups), `acceptor_only_spinsystem` (2 acceptor groups).
+  - **Experiment fixture**: `experiment` (X-band, 9.5 GHz, 500 points, 320–370 mT).
+  - **SimOpt fixtures**: `simopt_basic` (10 knots, no interpolation, 1 core), `simopt_multicore` (2 cores), `simopt_auto_cores` (0 = auto-detect), `simopt_interpolation` (5 knots, refinement 3).
+- Unit conventions documented in the conftest module docstring (field axis in milliTesla, freq in Hz, couplings in MHz, etc.).
+- `tests/test_smoke.py` created with 14 smoke tests:
+  - Fixture attribute validation (all required attrs present on each fixture).
+  - Single-core `do_simulation` runs (minimal, full, interpolation).
+  - Multicore `do_simulation_multicore` matches single-core output.
+  - Multicore auto-detect (`cpu_cores=0`).
+- All 14 tests pass; lint and format checks clean.
 
 ### Issue: Tests for `radpair/functions.py`
 
