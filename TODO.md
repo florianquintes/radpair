@@ -42,19 +42,19 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
    - Automate via `automodule` directives for `radpair.core`, `radpair.classes`, `radpair.functions`, `radpair._wrappers`.
    - Ensure every public function and class has a numpydoc-style docstring rendering correctly.
 
-5. **Development** (`development.rst`)
-   - Commands: test, lint, format, docs, build (reference `AGENTS.md` table).
+5. **Development** (`development.rst`) ✅ Done
+   - Commands: test, lint, format, docs, build.
    - CI pipeline overview (3 workflows: ci.yml, format.yml, docs.yml).
-   - How to release (tag `v*.*.*` → auto-publish to PyPI).
+   - Release flow (tag `v*.*.*` → auto-publish to PyPI).
 
-6. **Contributing** (`contributing.rst`)
+6. **Contributing** (`contributing.rst`) ✅ Done
+   - Project structure overview for `src/radpair/` modules.
    - Branch / PR conventions.
    - Code style: ruff defaults, numpydoc docstrings, type annotations required.
-   - Test requirements (see Milestone 2).
 
-7. **License** (`license.rst`)
-   - Use `.. include:: ../../LICENSE` directive to render the root `LICENSE` file.
-   - `LICENSE` file exists in repo root (✅ done).
+7. **License** (`license.rst`) ✅ Done
+   - References `LICENSE` file and GPLv3 summary.
+   - `LICENSE` file exists in repo root.
 
 ### Issue: ~~Wire up toctree and verify docs build~~ ✅ Done
 
