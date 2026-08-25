@@ -223,11 +223,23 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - Update `Matrix`/`Core` usage and the nested hyperfine summation loop accordingly.
 - This is a breaking API change — plan for major version bump.
 
-### Issue: Break `do_simulation` into composable functions
+### Issue: ~~Break `do_simulation` into composable functions~~ ✅ Done
 
-- `do_simulation` is ~360 lines doing unit conversion, tensor setup, rotation, resonance-field calculation, interpolation, and spectrum assembly in one function.
-- Extract stages: `prepare_spinsystem`, `build_tensors`, `rotate_tensors`, `compute_resonance_fields`, `compute_intensities`, `assemble_spectrum`.
-- Each stage should be independently testable.
+- `do_simulation` was ~280 lines doing unit conversion, tensor setup, rotation, resonance-field calculation, interpolation, and spectrum assembly in one function.
+- Extracted 8 composable functions into `functions.py`:
+  1. `prepare_spinsystem` — deep-copies the spin system and converts all parameters to internal angular-frequency units.
+  2. `setup_orientation_grid` — creates coarse/fine Fibonacci-sphere grids and integration weights.
+  3. `build_tensors` — builds diagonal tensors and extracts Euler frame angles.
+  4. `rotate_tensors` — tilts tensors into reference frames and rotates for each orientation (replaces `cl.Matrix` with direct `tensor_rotation` calls).
+  5. `compute_hyperfine_combinations` — computes sum/difference hyperfine matrices and Pascal-triangle weights (replaces `cl.Core` with direct helper calls).
+  6. `compute_resonance_fields` — solves the analytic Hamiltonian for 4 transitions, producing resonance fields, quantum beats, and widths.
+  7. `compute_intensities` — calculates phase-angle-weighted line intensities with `[+1, -1, +1, -1]` pattern.
+  8. `assemble_spectrum` — converts fields back to mT, optionally interpolates, applies weights/linewidth, and performs spectral summation.
+- Constants `_GAMMA_E_REF` and `_GAUSSIAN_FWHM_TO_SIGMA` moved from `core.py` to `functions.py`.
+- `core.py` reduced to a ~30-line orchestrator; imports of `deepcopy`, `product`, `scipy.constants`, `eprbase`, and `radpair.classes` removed.
+- `classes.py` unchanged — `Matrix` and `Core` remain for existing tests and potential future use.
+- 38 new unit tests in `tests/test_stages.py` covering each stage independently (shapes, values, edge cases) plus 2 end-to-end pipeline parity tests.
+- All 162 tests pass (124 existing + 38 new); ruff format + check clean; docs build with zero warnings.
 
 ### Issue: Improve parallelization
 
