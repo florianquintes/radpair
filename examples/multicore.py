@@ -10,19 +10,19 @@ Run::
 """
 
 import os
-from types import SimpleNamespace
 
 import matplotlib.pyplot as plt
 import numpy as np
 from _systems import FIELD_AXIS, make_experiment, make_S3
 
+from radpair._types import SimulationOptions
 from radpair.core import do_simulation, do_simulation_multicore
 
 
 def main() -> None:
     sys = make_S3()
     exp = make_experiment()
-    simopt = SimpleNamespace(grid_points=12, refinement=1, cpu_cores=4)
+    simopt = SimulationOptions(grid_points=12, refinement=1, cpu_cores=4)
 
     intensity_sc = do_simulation(sys, exp, simopt)
     intensity_mc = do_simulation_multicore(sys, exp, simopt)

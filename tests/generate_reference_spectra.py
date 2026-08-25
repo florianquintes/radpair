@@ -13,10 +13,9 @@ Run::
     uv run python tests/generate_reference_spectra.py
 """
 
-from types import SimpleNamespace
-
 import numpy as np
 
+from radpair._types import Experiment, SimulationOptions, Spinsystem
 from radpair.core import do_simulation
 
 # ---------------------------------------------------------------------------
@@ -34,16 +33,15 @@ CPU_CORES = 1
 FIELD_AXIS = np.linspace(FIELD_MIN, FIELD_MAX, N_POINTS)
 
 
-def _make_experiment() -> SimpleNamespace:
-    return SimpleNamespace(
+def _make_experiment() -> Experiment:
+    return Experiment(
         B_z=FIELD_AXIS.copy(),
         freq_mw=FREQ_MW,
-        magnetic_field=FIELD_AXIS.copy(),
     )
 
 
-def _make_simopt() -> SimpleNamespace:
-    return SimpleNamespace(
+def _make_simopt() -> SimulationOptions:
+    return SimulationOptions(
         grid_points=GRID_POINTS,
         refinement=REFINEMENT,
         cpu_cores=CPU_CORES,
@@ -63,9 +61,9 @@ def _zero_frame() -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 
-def _make_S1() -> SimpleNamespace:
+def _make_S1() -> Spinsystem:
     """S1 — 0 nuclei groups (bare radical pair)."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0023, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[_zero_A(), _zero_A(), _zero_A(), _zero_A(), _zero_A()],
@@ -90,9 +88,9 @@ def _make_S1() -> SimpleNamespace:
     )
 
 
-def _make_S2() -> SimpleNamespace:
+def _make_S2() -> Spinsystem:
     """S2 — 1 nucleus (donor 1H), isotropic baseline."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0030, 2.0030, 2.0030]),
         g2=np.array([2.0090, 2.0090, 2.0090]),
         A_tensors=[
@@ -123,9 +121,9 @@ def _make_S2() -> SimpleNamespace:
     )
 
 
-def _make_S3() -> SimpleNamespace:
+def _make_S3() -> Spinsystem:
     """S3 — 2 nuclei (1 donor 1H + 1 acceptor 2x14N), anisotropic."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -156,9 +154,9 @@ def _make_S3() -> SimpleNamespace:
     )
 
 
-def _make_S4() -> SimpleNamespace:
+def _make_S4() -> Spinsystem:
     """S4 — Swap of S3 (1 acceptor 1H + 1 donor 2x14N)."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -189,9 +187,9 @@ def _make_S4() -> SimpleNamespace:
     )
 
 
-def _make_S5() -> SimpleNamespace:
+def _make_S5() -> Spinsystem:
     """S5 — 3 nuclei (2 donor + 1 acceptor), includes n=3 methyl group."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -222,9 +220,9 @@ def _make_S5() -> SimpleNamespace:
     )
 
 
-def _make_S6() -> SimpleNamespace:
+def _make_S6() -> Spinsystem:
     """S6 — 4 nuclei (1 donor + 3 acceptor), iso g1 + aniso g2, I=3/2 (35Cl)."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0030, 2.0030, 2.0030]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -255,9 +253,9 @@ def _make_S6() -> SimpleNamespace:
     )
 
 
-def _make_S7() -> SimpleNamespace:
+def _make_S7() -> Spinsystem:
     """S7 — 5 nuclei (3 donor + 2 acceptor), maximum complexity."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -304,7 +302,7 @@ SPECTRA = {
 # ---------------------------------------------------------------------------
 
 
-def _spinsystem_to_metadata(sys: SimpleNamespace) -> dict[str, object]:
+def _spinsystem_to_metadata(sys: Spinsystem) -> dict[str, object]:
     """Extract all spinsystem attributes into a flat dict for npz storage."""
     meta: dict[str, object] = {}
     for key, val in vars(sys).items():

@@ -106,9 +106,9 @@ class TestPrepareSpinsystem:
 
     def test_int_dtype_promoted(self):
         """A tensors with integer dtype should be promoted to float64."""
-        from types import SimpleNamespace
+        from radpair._types import Spinsystem
 
-        sys_int = SimpleNamespace(
+        sys_int = Spinsystem(
             g1=np.array([2.0, 2.0, 2.0]),
             g2=np.array([2.0, 2.0, 2.0]),
             A_tensors=[
@@ -120,13 +120,6 @@ class TestPrepareSpinsystem:
             ],
             nuclei_n=[1, 0, 0, 0, 0],
             nuclei_I=[0.5, 0.0, 0.0, 0.0, 0.0],
-            D=0.0,
-            E=0.0,
-            J_ex=0.0,
-            width_gauss=0.5,
-            g1_frame=np.array([0.0, 0.0, 0.0]),
-            g2_frame=np.array([0.0, 0.0, 0.0]),
-            D_frame=np.array([0.0, 0.0, 0.0]),
             A_frames=[
                 np.array([0.0, 0.0, 0.0]),
                 np.array([0.0, 0.0, 0.0]),
@@ -134,6 +127,7 @@ class TestPrepareSpinsystem:
                 np.array([0.0, 0.0, 0.0]),
                 np.array([0.0, 0.0, 0.0]),
             ],
+            width_gauss=0.5,
             donor_list=[0],
             acceptor_list=[],
         )

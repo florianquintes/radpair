@@ -10,9 +10,9 @@ All systems share a common X-band experiment (9.75 GHz, 344–350 mT)
 and simulation options (12 grid points, no interpolation, single core).
 """
 
-from types import SimpleNamespace
-
 import numpy as np
+
+from radpair._types import Experiment, SimulationOptions, Spinsystem
 
 FREQ_MW = 9.75e9  # Hz, X-band EPR
 N_POINTS = 500
@@ -26,18 +26,17 @@ LINEWIDTH = 0.05  # mT
 FIELD_AXIS = np.linspace(FIELD_MIN, FIELD_MAX, N_POINTS)
 
 
-def make_experiment() -> SimpleNamespace:
+def make_experiment() -> Experiment:
     """Return the standard X-band experiment used by all examples."""
-    return SimpleNamespace(
+    return Experiment(
         B_z=FIELD_AXIS.copy(),
         freq_mw=FREQ_MW,
-        magnetic_field=FIELD_AXIS.copy(),
     )
 
 
-def make_simopt() -> SimpleNamespace:
+def make_simopt() -> SimulationOptions:
     """Return the standard simulation options used by all examples."""
-    return SimpleNamespace(
+    return SimulationOptions(
         grid_points=GRID_POINTS,
         refinement=REFINEMENT,
         cpu_cores=CPU_CORES,
@@ -52,9 +51,9 @@ def _zero_frame() -> np.ndarray:
     return np.array([0.0, 0.0, 0.0])
 
 
-def make_S1() -> SimpleNamespace:
+def make_S1() -> Spinsystem:
     """S1 — bare radical pair, 0 nuclei groups."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0023, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[_zero_A(), _zero_A(), _zero_A(), _zero_A(), _zero_A()],
@@ -79,9 +78,9 @@ def make_S1() -> SimpleNamespace:
     )
 
 
-def make_S2() -> SimpleNamespace:
+def make_S2() -> Spinsystem:
     """S2 — 1 donor nucleus (¹H), isotropic baseline."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0030, 2.0030, 2.0030]),
         g2=np.array([2.0090, 2.0090, 2.0090]),
         A_tensors=[
@@ -112,9 +111,9 @@ def make_S2() -> SimpleNamespace:
     )
 
 
-def make_S3() -> SimpleNamespace:
+def make_S3() -> Spinsystem:
     """S3 — 2 nuclei (1 donor ¹H + 1 acceptor 2×¹⁴N), anisotropic."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -145,7 +144,7 @@ def make_S3() -> SimpleNamespace:
     )
 
 
-def make_S4() -> SimpleNamespace:
+def make_S4() -> Spinsystem:
     """S4 — Swap of S3 (1 acceptor ¹H + 1 donor 2×¹⁴N)."""
     sys = make_S3()
     sys.donor_list = [1]
@@ -153,9 +152,9 @@ def make_S4() -> SimpleNamespace:
     return sys
 
 
-def make_S5() -> SimpleNamespace:
+def make_S5() -> Spinsystem:
     """S5 — 3 nuclei (2 donor + 1 acceptor), includes n=3 methyl group."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -186,9 +185,9 @@ def make_S5() -> SimpleNamespace:
     )
 
 
-def make_S6() -> SimpleNamespace:
+def make_S6() -> Spinsystem:
     """S6 — 4 nuclei (1 donor + 3 acceptor), iso g1 + aniso g2, I=3/2 (³⁵Cl)."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0030, 2.0030, 2.0030]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -219,9 +218,9 @@ def make_S6() -> SimpleNamespace:
     )
 
 
-def make_S7() -> SimpleNamespace:
+def make_S7() -> Spinsystem:
     """S7 — 5 nuclei (3 donor + 2 acceptor), maximum complexity."""
-    return SimpleNamespace(
+    return Spinsystem(
         g1=np.array([2.0020, 2.0040, 2.0060]),
         g2=np.array([2.0080, 2.0100, 2.0120]),
         A_tensors=[
@@ -252,7 +251,7 @@ def make_S7() -> SimpleNamespace:
     )
 
 
-SYSTEMS: dict[str, type[SimpleNamespace]] = {
+SYSTEMS: dict[str, type[Spinsystem]] = {
     "S1": make_S1,
     "S2": make_S2,
     "S3": make_S3,

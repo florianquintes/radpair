@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from radpair._types import spinsystem_field_names
 from radpair.core import do_simulation, do_simulation_multicore
 
 # ---------------------------------------------------------------------------
@@ -10,23 +11,7 @@ from radpair.core import do_simulation, do_simulation_multicore
 # ---------------------------------------------------------------------------
 
 
-SPINSYSTEM_REQUIRED_ATTRS = [
-    "g1",
-    "g2",
-    "A_tensors",
-    "nuclei_n",
-    "nuclei_I",
-    "D",
-    "E",
-    "J_ex",
-    "width_gauss",
-    "g1_frame",
-    "g2_frame",
-    "D_frame",
-    "A_frames",
-    "donor_list",
-    "acceptor_list",
-]
+SPINSYSTEM_REQUIRED_ATTRS = spinsystem_field_names()
 
 EXP_REQUIRED_ATTRS = ["B_z", "freq_mw", "magnetic_field"]
 

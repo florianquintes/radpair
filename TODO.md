@@ -210,11 +210,24 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 
 > Depends on Milestones 1–3. Should be a separate major/minor version bump.
 
-### Issue: Replace dynamic-attribute interface with typed dataclasses
+### Issue: ~~Replace dynamic-attribute interface with typed dataclasses~~ ✅ Done (partially — original motivation resolved earlier)
 
-- `do_simulation` currently accesses `Sys.g1`, `Sys.A1`, `vars(Sys)["A1"]`, etc. dynamically.
-- Introduce `@dataclass` definitions for `Spinsystem`, `Exp`, `SimOpt` with explicit fields.
-- This enables IDE support, static analysis, and self-documenting code.
+**Original motivation**: `do_simulation` accessed `Sys.g1`, `Sys.A1`, `vars(Sys)["A1"]` dynamically — no static analysis, no IDE support, no validation.
+
+**Achieved in earlier issues**:
+- `getattr`/`setattr`/`vars()` fully eliminated from `src/` — all access is direct attribute access (`Sys.A_tensors[i]`, `Sys.nuclei_n[i]`).
+- `@runtime_checkable Protocol` classes in `_types.py` documented all fields with type annotations.
+- The hardcoded 5-nuclei limit was removed, simplifying the attribute surface.
+
+**Achieved in this issue**:
+- Replaced `Protocol` classes with concrete `@dataclass` definitions (`Spinsystem`, `Experiment`, `SimulationOptions`) that can be instantiated directly.
+- Added `__post_init__` validation for `Spinsystem`: length consistency (`A_tensors`/`nuclei_n`/`nuclei_I`/`A_frames`), shape checks, positive g-values, non-negative integer nuclei counts, half-integer spins, positive linewidth, valid donor/acceptor indices, no donor/acceptor overlap.
+- Added sensible defaults: `D=0`, `E=0`, `J_ex=0`, zero frames, empty donor/acceptor lists, `Experiment.magnetic_field` auto-copies `B_z` when `None`.
+- Eliminated `SimpleNamespace` from all test fixtures, example scripts, benchmark systems, reference-spectrum generator, and documentation.
+- Added `spinsystem_field_names()` helper for introspecting dataclass fields.
+- 27 new validation tests in `tests/test_types.py` covering all `__post_init__` checks and default-value behavior.
+- All 189 tests pass (162 existing + 27 new); ruff format + check clean; docs build with zero warnings.
+- **Backward compatibility**: `SimpleNamespace` objects with the right attributes still work at runtime (Python duck-typing), but type checkers will flag them — intentional to encourage migration.
 
 ### Issue: ~~Remove hardcoded 5-nuclei limit~~ ✅ Done
 

@@ -3,9 +3,10 @@ Examples
 
 This page provides worked examples showing how to use ``radpair`` to
 simulate cw-EPR spectra of spin-correlated radical pairs.  All examples
-use :class:`types.SimpleNamespace` objects to define the spin system,
-experiment, and simulation options, which is the simplest way to get
-started.
+use typed dataclass objects (``Spinsystem``, ``Experiment``,
+``SimulationOptions`` from :mod:`radpair._types`) to define the spin
+system, experiment, and simulation options, which is the simplest way
+to get started.
 
 The example scripts are available in the ``examples/`` directory of the
 source distribution.  Each script is self-contained and can be run with::
@@ -26,20 +27,19 @@ options:
 
 .. code-block:: python
 
-   from types import SimpleNamespace
    import numpy as np
+   from radpair._types import Experiment, SimulationOptions
 
    # Experiment: X-band EPR, 9.75 GHz, field sweep 344–350 mT
    field_axis = np.linspace(344.0, 350.0, 500)
 
-   experiment = SimpleNamespace(
+   experiment = Experiment(
        B_z=field_axis,
        freq_mw=9.75e9,            # Hz
-       magnetic_field=field_axis.copy(),
    )
 
    # Simulation options: 12 orientation grid knots, single core
-   simopt = SimpleNamespace(
+   simopt = SimulationOptions(
        grid_points=12,
        refinement=1,
        cpu_cores=1,
@@ -58,33 +58,33 @@ real-valued intensity array matching the shape of ``experiment.B_z``.
 Unit conventions
 ~~~~~~~~~~~~~~~~
 
-+-------------------------+---------------------------------------------+
-| Attribute               | Unit                                        |
-+=========================+=============================================+
-| ``Exp.B_z``             | milliTesla                                  |
-+-------------------------+---------------------------------------------+
-| ``Exp.freq_mw``         | Hz                                          |
-+-------------------------+---------------------------------------------+
-| ``Sys.A_tensors``       | MHz (list of 3-element arrays)              |
-+-------------------------+---------------------------------------------+
-| ``Sys.D``, ``E``        | MHz                                         |
-+-------------------------+---------------------------------------------+
-| ``Sys.J_ex``            | MHz                                         |
-+-------------------------+---------------------------------------------+
-| ``Sys.width_gauss``     | milliTesla (despite the name)               |
-+-------------------------+---------------------------------------------+
-| ``Sys.*_frame``         | radians (Euler angles [α, β, γ])            |
-+-------------------------+---------------------------------------------+
-| ``Sys.g1``, ``g2``      | dimensionless (3-element diagonal)          |
-+-------------------------+---------------------------------------------+
-| ``Sys.nuclei_n``        | list of equivalent-nuclei counts (int ≥ 0)  |
-+-------------------------+---------------------------------------------+
-| ``Sys.nuclei_I``        | list of nuclear spins (float, ½ multiples)  |
-+-------------------------+---------------------------------------------+
-| ``Sys.donor_list``      | 0-indexed list of donor nuclei positions    |
-+-------------------------+---------------------------------------------+
-| ``Sys.acceptor_list``   | 0-indexed list of acceptor nuclei positions |
-+-------------------------+---------------------------------------------+
++------------------------------+----------------------------------------------+
+| Attribute                    | Unit                                         |
++==============================+==============================================+
+| ``Experiment.B_z``           | milliTesla                                   |
++------------------------------+----------------------------------------------+
+| ``Experiment.freq_mw``       | Hz                                           |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.A_tensors``     | MHz (list of 3-element arrays)               |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.D``, ``E``      | MHz                                          |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.J_ex``          | MHz                                          |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.width_gauss``   | milliTesla (despite the name)                |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.*_frame``       | radians (Euler angles [α, β, γ])             |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.g1``, ``g2``    | dimensionless (3-element diagonal)           |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.nuclei_n``      | list of equivalent-nuclei counts (int ≥ 0)   |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.nuclei_I``      | list of nuclear spins (float, ½ multiples)   |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.donor_list``    | 0-indexed list of donor nuclei positions     |
++------------------------------+----------------------------------------------+
+| ``Spinsystem.acceptor_list`` | 0-indexed list of acceptor nuclei positions  |
++------------------------------+----------------------------------------------+
 
 Example 1: Bare radical pair (S1)
 ---------------------------------
@@ -95,9 +95,11 @@ g-tensors, nonzero ZFS (*D* = 8 MHz, *E* = 1.5 MHz) and exchange
 
 .. code-block:: python
 
+   from radpair._types import Spinsystem
+
    _zero = np.array([0.0, 0.0, 0.0])
 
-   spinsystem = SimpleNamespace(
+   spinsystem = Spinsystem(
        g1=np.array([2.0023, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
        A_tensors=[_zero, _zero, _zero, _zero, _zero],
@@ -127,7 +129,7 @@ isotropic g).  A small exchange (*J* = 0.1 MHz) is present; ZFS is zero.
 
 .. code-block:: python
 
-   spinsystem = SimpleNamespace(
+   spinsystem = Spinsystem(
        g1=np.array([2.0030, 2.0030, 2.0030]),
        g2=np.array([2.0090, 2.0090, 2.0090]),
        A_tensors=[np.array([1.5, 1.5, 1.5]), _zero, _zero, _zero, _zero],
@@ -156,7 +158,7 @@ so tensors are rotated relative to the lab frame.
 
 .. code-block:: python
 
-   spinsystem = SimpleNamespace(
+   spinsystem = Spinsystem(
        g1=np.array([2.0020, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
        A_tensors=[
@@ -195,7 +197,7 @@ nuclei.
 .. code-block:: python
 
    # S4: same as S3 but with swapped assignments
-   spinsystem_S4 = SimpleNamespace(
+   spinsystem_S4 = Spinsystem(
        # ... (same g, A_tensors, D, E, J_ex, frames as S3) ...
        donor_list=[1],      # was [0] in S3
        acceptor_list=[0],   # was [1] in S3
@@ -238,7 +240,7 @@ multiple nuclear spins (*I* = ½, 1, 3/2) and multiplicities (*n* = 1, 2).
 
 .. code-block:: python
 
-   spinsystem = SimpleNamespace(
+   spinsystem = Spinsystem(
        g1=np.array([2.0020, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
        A_tensors=[
@@ -278,9 +280,10 @@ the single-core call.
 
 .. code-block:: python
 
+   from radpair._types import SimulationOptions
    from radpair.core import do_simulation_multicore
 
-   simopt_multicore = SimpleNamespace(
+   simopt_multicore = SimulationOptions(
        grid_points=12,
        refinement=1,
        cpu_cores=4,   # use 4 worker processes (0 = auto-detect)
