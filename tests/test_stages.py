@@ -458,7 +458,7 @@ class TestAssembleSpectrum:
             full_spinsystem, experiment.freq_mw, experiment.B_z
         )
         theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_basic.grid_points, simopt_basic.refinement
+            simopt_basic.knots, simopt_basic.refinement
         )
         all_tensors, frame_angles = build_tensors(Sys)
         g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
@@ -523,7 +523,7 @@ class TestPipelineMatchesDoSimulation:
             full_spinsystem, experiment.freq_mw, experiment.B_z
         )
         theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_basic.grid_points, simopt_basic.refinement
+            simopt_basic.knots, simopt_basic.refinement
         )
         all_tensors, frame_angles = build_tensors(Sys)
         g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
@@ -560,7 +560,7 @@ class TestPipelineMatchesDoSimulation:
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
         theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_interpolation.grid_points, simopt_interpolation.refinement
+            simopt_interpolation.knots, simopt_interpolation.refinement
         )
         all_tensors, frame_angles = build_tensors(Sys)
         g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)

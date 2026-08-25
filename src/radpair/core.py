@@ -61,7 +61,7 @@ def do_simulation(
     )
 
     theta, phi, theta_fine, phi_fine, weights, interp_mode = fun.setup_orientation_grid(
-        simopt.grid_points, simopt.refinement
+        simopt.knots, simopt.refinement
     )
 
     all_tensors, frame_angles = fun.build_tensors(Sys)

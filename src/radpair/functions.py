@@ -439,7 +439,7 @@ def prepare_spinsystem(
 
 
 def setup_orientation_grid(
-    grid_points: int,
+    knots: int,
     refinement: int,
 ) -> tuple[
     np.ndarray,
@@ -456,7 +456,7 @@ def setup_orientation_grid(
 
     Parameters
     ----------
-    grid_points : int
+    knots : int
         Number of orientation-grid knots.
     refinement : int
         Interpolation factor.  ``1`` disables interpolation; values > 1
@@ -477,14 +477,14 @@ def setup_orientation_grid(
     interpolation_mode : bool
         Whether interpolation is enabled.
     """
-    grid_ = grid.Grid(knots=grid_points)
+    grid_ = grid.Grid(knots=knots)
     sym = "Ci"
     spherical = grid_.get_grid(sym)
     theta_angles, phi_angles = spherical[:, 1], spherical[:, 2]
 
     interpolation_mode = refinement > 1
     if interpolation_mode:
-        grid_fine = grid.Grid(knots=grid_points * int(refinement))
+        grid_fine = grid.Grid(knots=knots * int(refinement))
         spherical_fine = grid_fine.get_grid(sym)
         theta_fine, phi_fine = spherical_fine[:, 1], spherical_fine[:, 2]
         weights = grid_fine.get_areas()[np.newaxis, :]

@@ -202,13 +202,13 @@ class TestSimulationOptions:
 
     def test_defaults(self):
         opt = SimulationOptions()
-        assert opt.grid_points == 12
+        assert opt.knots == 12
         assert opt.refinement == 1
         assert opt.cpu_cores == 1
 
     def test_custom(self):
-        opt = SimulationOptions(grid_points=24, refinement=2, cpu_cores=4)
-        assert opt.grid_points == 24
+        opt = SimulationOptions(knots=24, refinement=2, cpu_cores=4)
+        assert opt.knots == 24
         assert opt.refinement == 2
         assert opt.cpu_cores == 4
 

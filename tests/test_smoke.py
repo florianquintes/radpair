@@ -15,7 +15,7 @@ SPINSYSTEM_REQUIRED_ATTRS = spinsystem_field_names()
 
 EXP_REQUIRED_ATTRS = ["B_z", "freq_mw", "magnetic_field"]
 
-SIMOPT_REQUIRED_ATTRS = ["grid_points", "refinement", "cpu_cores"]
+SIMOPT_REQUIRED_ATTRS = ["knots", "refinement", "cpu_cores"]
 
 
 @pytest.mark.parametrize(

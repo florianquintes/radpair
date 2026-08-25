@@ -26,7 +26,7 @@ FREQ_MW = 9.75e9  # Hz, X-band EPR
 N_POINTS = 500
 FIELD_MIN = 344.0  # mT
 FIELD_MAX = 350.0  # mT
-GRID_POINTS = 12
+N_KNOTS = 12
 REFINEMENT = 1
 CPU_CORES = 1
 
@@ -42,7 +42,7 @@ def _make_experiment() -> Experiment:
 
 def _make_simopt() -> SimulationOptions:
     return SimulationOptions(
-        grid_points=GRID_POINTS,
+        knots=N_KNOTS,
         refinement=REFINEMENT,
         cpu_cores=CPU_CORES,
     )
@@ -336,7 +336,7 @@ def main() -> None:
         meta = _spinsystem_to_metadata(sys)
         meta["B_z"] = FIELD_AXIS
         meta["freq_mw"] = FREQ_MW
-        meta["grid_points"] = GRID_POINTS
+        meta["grid_knots"] = N_KNOTS
         meta["refinement"] = REFINEMENT
         meta["cpu_cores"] = CPU_CORES
         meta["intensity"] = intensity

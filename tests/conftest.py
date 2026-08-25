@@ -19,7 +19,7 @@ Unit conventions (verified against the source code):
 * ``Spinsystem.g1_frame``, ``Spinsystem.g2_frame``, ``Spinsystem.D_frame`` — Euler angles in **radians**
 * ``Spinsystem.donor_list``     — 0-indexed list of nuclei group positions on the donor radical
 * ``Spinsystem.acceptor_list``  — 0-indexed list of nuclei group positions on the acceptor radical
-* ``SimulationOptions.grid_points`` — number of orientation-grid knots
+* ``SimulationOptions.knots`` — number of orientation-grid knots
 * ``SimulationOptions.refinement``  — interpolation factor (1 = no interpolation)
 * ``SimulationOptions.cpu_cores``   — worker processes for multicore (0 = auto-detect)
 """
@@ -212,22 +212,22 @@ def experiment() -> Experiment:
 @pytest.fixture
 def simopt_basic() -> SimulationOptions:
     """Basic simulation options: 10 grid knots, no interpolation, single core."""
-    return SimulationOptions(grid_points=10, refinement=1, cpu_cores=1)
+    return SimulationOptions(knots=10, refinement=1, cpu_cores=1)
 
 
 @pytest.fixture
 def simopt_multicore() -> SimulationOptions:
     """Multicore simulation options: 10 grid knots, 2 CPU cores."""
-    return SimulationOptions(grid_points=10, refinement=1, cpu_cores=2)
+    return SimulationOptions(knots=10, refinement=1, cpu_cores=2)
 
 
 @pytest.fixture
 def simopt_auto_cores() -> SimulationOptions:
     """Auto-detect CPU cores: 10 grid knots, ``cpu_cores=0``."""
-    return SimulationOptions(grid_points=10, refinement=1, cpu_cores=0)
+    return SimulationOptions(knots=10, refinement=1, cpu_cores=0)
 
 
 @pytest.fixture
 def simopt_interpolation() -> SimulationOptions:
     """Interpolation mode: 5 grid knots, refinement factor 3, single core."""
-    return SimulationOptions(grid_points=5, refinement=3, cpu_cores=1)
+    return SimulationOptions(knots=5, refinement=3, cpu_cores=1)

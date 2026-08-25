@@ -40,7 +40,7 @@ options:
 
    # Simulation options: 12 orientation grid knots, single core
    simopt = SimulationOptions(
-       grid_points=12,
+       knots=12,
        refinement=1,
        cpu_cores=1,
    )
@@ -284,7 +284,7 @@ the single-core call.
    from radpair.core import do_simulation_multicore
 
    simopt_multicore = SimulationOptions(
-       grid_points=12,
+       knots=12,
        refinement=1,
        cpu_cores=4,   # use 4 worker processes (0 = auto-detect)
    )

@@ -35,7 +35,7 @@ from _common import (
     CPU_CORES_VALUES,
     DESCRIPTIONS,
     FIELD_AXIS,
-    GRID_POINTS,
+    N_KNOTS,
     N_REPEATS,
     N_WARMUP,
     REFINEMENT_VALUES,
@@ -56,7 +56,7 @@ def bench_nuclei_scaling() -> list[dict[str, object]]:
     """Benchmark S1–S7 (0 to 5 active nuclei groups) with multicore."""
     exp = make_experiment()
     simopt = SimpleNamespace(
-        grid_points=GRID_POINTS,
+        knots=N_KNOTS,
         refinement=1,
         cpu_cores=DEFAULT_CPU_CORES,
     )
@@ -91,12 +91,12 @@ def bench_interpolation_scaling() -> list[dict[str, object]]:
 
     for refinement in REFINEMENT_VALUES:
         simopt = SimpleNamespace(
-            grid_points=GRID_POINTS,
+            knots=N_KNOTS,
             refinement=refinement,
             cpu_cores=DEFAULT_CPU_CORES,
         )
         stats = bench(sys, exp, simopt, call_fn=bench_call_multicore)
-        n_orientations = GRID_POINTS * refinement
+        n_orientations = N_KNOTS * refinement
         results.append(
             {
                 "refinement": refinement,
@@ -126,7 +126,7 @@ def bench_cpu_cores_scaling() -> list[dict[str, object]]:
 
     for n_cores in CPU_CORES_VALUES:
         simopt = SimpleNamespace(
-            grid_points=GRID_POINTS,
+            knots=N_KNOTS,
             refinement=1,
             cpu_cores=n_cores,
         )
@@ -150,7 +150,7 @@ def bench_full_suite() -> dict[str, object]:
     """Benchmark all 7 spectra sequentially with multicore and report total."""
     exp = make_experiment()
     simopt = SimpleNamespace(
-        grid_points=GRID_POINTS,
+        knots=N_KNOTS,
         refinement=1,
         cpu_cores=DEFAULT_CPU_CORES,
     )
@@ -190,14 +190,14 @@ def write_markdown(
     lines.append(f"- Platform: {info['platform']}")
     lines.append(f"- Warmup runs: {N_WARMUP}")
     lines.append(f"- Measurement runs: {N_REPEATS}")
-    lines.append(f"- Grid points: {GRID_POINTS}")
+    lines.append(f"- Grid knots: {N_KNOTS}")
     lines.append(f"- Field axis: {len(FIELD_AXIS)} points")
     lines.append(f"- Default CPU cores: {DEFAULT_CPU_CORES}\n")
 
     # --- Nuclei scaling ---
     lines.append(f"## 1. Nuclei scaling (S1–S7, {DEFAULT_CPU_CORES} cores)\n")
     lines.append("Each system is simulated with default settings ")
-    lines.append(f"(grid={GRID_POINTS}, refinement=1, {DEFAULT_CPU_CORES} cores).\n")
+    lines.append(f"(grid={N_KNOTS}, refinement=1, {DEFAULT_CPU_CORES} cores).\n")
     headers = [
         "System",
         "Nuclei",
@@ -230,7 +230,7 @@ def write_markdown(
     lines.append("System S3 (2 anisotropic nuclei) with increasing ")
     lines.append(
         f"refinement factor, {DEFAULT_CPU_CORES} CPU cores.  "
-        "Orientations = grid_points × refinement.\n"
+        "Orientations = knots × refinement.\n"
     )
     headers = [
         "Refinement",

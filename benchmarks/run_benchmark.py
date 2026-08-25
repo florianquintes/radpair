@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from _common import (
     DESCRIPTIONS,
     FIELD_AXIS,
-    GRID_POINTS,
+    N_KNOTS,
     N_REPEATS,
     N_WARMUP,
     REFINEMENT_VALUES,
@@ -81,12 +81,12 @@ def bench_interpolation_scaling() -> list[dict[str, object]]:
 
     for refinement in REFINEMENT_VALUES:
         simopt = SimpleNamespace(
-            grid_points=GRID_POINTS,
+            knots=N_KNOTS,
             refinement=refinement,
             cpu_cores=1,
         )
         stats = bench(sys, exp, simopt)
-        n_orientations = GRID_POINTS * refinement
+        n_orientations = N_KNOTS * refinement
         results.append(
             {
                 "refinement": refinement,
@@ -136,13 +136,13 @@ def write_markdown(
     lines.append(f"- Platform: {info['platform']}")
     lines.append(f"- Warmup runs: {N_WARMUP}")
     lines.append(f"- Measurement runs: {N_REPEATS}")
-    lines.append(f"- Grid points: {GRID_POINTS}")
+    lines.append(f"- Grid knots: {N_KNOTS}")
     lines.append(f"- Field axis: {len(FIELD_AXIS)} points\n")
 
     # --- Nuclei scaling ---
     lines.append("## 1. Nuclei scaling (S1–S7)\n")
     lines.append("Each system is simulated with default settings ")
-    lines.append(f"(grid={GRID_POINTS}, refinement=1, single core).\n")
+    lines.append(f"(grid={N_KNOTS}, refinement=1, single core).\n")
     headers = [
         "System",
         "Nuclei",
@@ -171,7 +171,7 @@ def write_markdown(
     # --- Interpolation scaling ---
     lines.append("## 2. Interpolation scaling (S3, refinement 1–4)\n")
     lines.append("System S3 (2 anisotropic nuclei) with increasing ")
-    lines.append("refinement factor.  Orientations = grid_points × refinement.\n")
+    lines.append("refinement factor.  Orientations = knots × refinement.\n")
     headers = [
         "Refinement",
         "Orientations",

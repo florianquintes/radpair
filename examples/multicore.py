@@ -22,7 +22,7 @@ from radpair.core import do_simulation, do_simulation_multicore
 def main() -> None:
     sys = make_S3()
     exp = make_experiment()
-    simopt = SimulationOptions(grid_points=12, refinement=1, cpu_cores=4)
+    simopt = SimulationOptions(knots=12, refinement=1, cpu_cores=4)
 
     intensity_sc = do_simulation(sys, exp, simopt)
     intensity_mc = do_simulation_multicore(sys, exp, simopt)

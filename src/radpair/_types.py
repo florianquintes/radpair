@@ -159,7 +159,7 @@ class SimulationOptions:
 
     Attributes
     ----------
-    grid_points : int
+    knots : int
         Number of orientation-grid knots for the spherical integration.
     refinement : int
         Interpolation factor.  ``1`` disables interpolation; values > 1
@@ -169,7 +169,7 @@ class SimulationOptions:
         auto-detect via :func:`multiprocessing.cpu_count`.
     """
 
-    grid_points: int = 12
+    knots: int = 12
     refinement: int = 1
     cpu_cores: int = 1
 

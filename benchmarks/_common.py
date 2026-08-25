@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "examples"))
 from _systems import (
     DESCRIPTIONS,
     FIELD_AXIS,
-    GRID_POINTS,
+    N_KNOTS,
     SYSTEMS,
     make_experiment,
     make_simopt,
@@ -29,7 +29,7 @@ __all__ = [
     "CPU_CORES_VALUES",
     "DESCRIPTIONS",
     "FIELD_AXIS",
-    "GRID_POINTS",
+    "N_KNOTS",
     "N_REPEATS",
     "N_WARMUP",
     "REFINEMENT_VALUES",

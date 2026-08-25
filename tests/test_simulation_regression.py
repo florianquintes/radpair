@@ -66,7 +66,7 @@ def _load_reference(
     )
 
     simopt = SimulationOptions(
-        grid_points=int(data["grid_points"]),
+        knots=int(data["grid_knots"]),
         refinement=int(data["refinement"]),
         cpu_cores=int(data["cpu_cores"]),
     )
