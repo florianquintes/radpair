@@ -205,12 +205,14 @@ class TestSimulationOptions:
         assert opt.knots == 12
         assert opt.refinement == 1
         assert opt.cpu_cores == 1
+        assert opt.max_chunk_mb is None
 
     def test_custom(self):
-        opt = SimulationOptions(knots=24, refinement=2, cpu_cores=4)
+        opt = SimulationOptions(knots=24, refinement=2, cpu_cores=4, max_chunk_mb=512)
         assert opt.knots == 24
         assert opt.refinement == 2
         assert opt.cpu_cores == 4
+        assert opt.max_chunk_mb == 512
 
     def test_is_dataclass(self):
         from dataclasses import is_dataclass

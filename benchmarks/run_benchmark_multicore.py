@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import os
 import sys
-from types import SimpleNamespace
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -48,6 +47,8 @@ from _common import (
     make_experiment,
 )
 
+from radpair._types import SimulationOptions
+
 DEFAULT_CPU_CORES = 4
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "BENCHMARK_MULTICORE.md")
 
@@ -55,7 +56,7 @@ OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "BENCHMARK_MULTICORE
 def bench_nuclei_scaling() -> list[dict[str, object]]:
     """Benchmark S1–S7 (0 to 5 active nuclei groups) with multicore."""
     exp = make_experiment()
-    simopt = SimpleNamespace(
+    simopt = SimulationOptions(
         knots=N_KNOTS,
         refinement=1,
         cpu_cores=DEFAULT_CPU_CORES,
@@ -90,7 +91,7 @@ def bench_interpolation_scaling() -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
 
     for refinement in REFINEMENT_VALUES:
-        simopt = SimpleNamespace(
+        simopt = SimulationOptions(
             knots=N_KNOTS,
             refinement=refinement,
             cpu_cores=DEFAULT_CPU_CORES,
@@ -125,7 +126,7 @@ def bench_cpu_cores_scaling() -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
 
     for n_cores in CPU_CORES_VALUES:
-        simopt = SimpleNamespace(
+        simopt = SimulationOptions(
             knots=N_KNOTS,
             refinement=1,
             cpu_cores=n_cores,
@@ -149,7 +150,7 @@ def bench_cpu_cores_scaling() -> list[dict[str, object]]:
 def bench_full_suite() -> dict[str, object]:
     """Benchmark all 7 spectra sequentially with multicore and report total."""
     exp = make_experiment()
-    simopt = SimpleNamespace(
+    simopt = SimulationOptions(
         knots=N_KNOTS,
         refinement=1,
         cpu_cores=DEFAULT_CPU_CORES,

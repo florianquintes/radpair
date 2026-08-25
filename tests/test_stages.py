@@ -12,11 +12,14 @@ import pytest
 from radpair.functions import (
     _GAMMA_E_REF,
     _GAUSSIAN_FWHM_TO_SIGMA,
+    _compute_chunk_size,
+    _get_available_ram,
     assemble_spectrum,
     build_tensors,
     compute_hyperfine_combinations,
     compute_intensities,
     compute_resonance_fields,
+    gaussian_summation,
     prepare_spinsystem,
     rotate_tensors,
     setup_orientation_grid,
@@ -585,3 +588,169 @@ class TestPipelineMatchesDoSimulation:
         )
 
         np.testing.assert_allclose(result, expected, rtol=1e-10, atol=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# _get_available_ram
+# ---------------------------------------------------------------------------
+
+
+class TestGetAvailableRam:
+    """Tests for :func:`_get_available_ram`."""
+
+    def test_returns_positive(self):
+        ram = _get_available_ram()
+        assert ram > 0
+
+    def test_reasonable_lower_bound(self):
+        """Available RAM should be at least 1 MB on any real system."""
+        ram = _get_available_ram()
+        assert ram > 1_000_000
+
+
+# ---------------------------------------------------------------------------
+# _compute_chunk_size
+# ---------------------------------------------------------------------------
+
+
+class TestComputeChunkSize:
+    """Tests for :func:`_compute_chunk_size`."""
+
+    def test_no_chunking_when_zero(self):
+        """max_chunk_mb=0 means no limit — all peaks in one chunk."""
+        assert _compute_chunk_size(10000, 500, 0) == 10000
+
+    def test_no_chunking_when_negative(self):
+        """Negative max_chunk_mb also disables chunking."""
+        assert _compute_chunk_size(10000, 500, -1) == 10000
+
+    def test_respects_explicit_limit(self):
+        """A 1 MB limit with 500 field points gives ~500 peaks per chunk."""
+        size = _compute_chunk_size(10000, 500, 1)
+        assert size == 500
+
+    def test_clamped_to_total_peaks(self):
+        """Chunk size never exceeds total_peaks."""
+        size = _compute_chunk_size(10, 500, 1000)
+        assert size == 10
+
+    def test_minimum_chunk_size_is_one(self):
+        """Even with a tiny limit, chunk size is at least 1."""
+        size = _compute_chunk_size(100, 500, 1)
+        assert size >= 1
+
+    def test_auto_detect_returns_valid_size(self):
+        """None (auto-detect) returns a positive chunk size."""
+        size = _compute_chunk_size(100000, 500, None)
+        assert size > 0
+        assert size <= 100000
+
+
+# ---------------------------------------------------------------------------
+# gaussian_summation
+# ---------------------------------------------------------------------------
+
+
+class TestGaussianSummation:
+    """Tests for :func:`gaussian_summation`."""
+
+    @pytest.fixture
+    def _summation_inputs(self, full_spinsystem, experiment, simopt_basic):
+        """Prepare flattened fields/intensities/widths for gaussian_summation."""
+        Sys, freq_mw, _ = prepare_spinsystem(
+            full_spinsystem, experiment.freq_mw, experiment.B_z
+        )
+        theta, phi, _, _, weights, _interp_mode = setup_orientation_grid(
+            simopt_basic.knots, simopt_basic.refinement
+        )
+        all_tensors, frame_angles = build_tensors(Sys)
+        g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
+        A_1, A_2, spec_weights = compute_hyperfine_combinations(Sys, a_projections)
+        res_fields, delta_omega, quantum_beat, widths = compute_resonance_fields(
+            Sys.J_ex, freq_mw, g1, g2, D, A_1, A_2
+        )
+        intensities = compute_intensities(delta_omega, quantum_beat)
+
+        fields_mT = res_fields / _GAMMA_E_REF * 1e3
+        shp = (theta.size, fields_mT.shape[1] * fields_mT.shape[2])
+        fields = fields_mT.reshape(shp)
+        widths_flat = widths.reshape(shp)
+        intensities_flat = intensities.reshape(shp)
+
+        sw = np.repeat(np.array([spec_weights]), 4)
+        sw = sw.reshape((1, sw.size))
+
+        return {
+            "fields": fields,
+            "intensities": intensities_flat * sw,
+            "widths": widths_flat,
+            "weights": weights,
+            "width_gauss": full_spinsystem.width_gauss,
+            "field_axis": experiment.B_z,
+        }
+
+    def test_output_shape(self, _summation_inputs, experiment):
+        """Output shape matches the field axis."""
+        inp = _summation_inputs
+        result = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+        )
+        assert result.shape == experiment.B_z.shape
+
+    def test_no_nans(self, _summation_inputs):
+        """Output should not contain NaNs."""
+        inp = _summation_inputs
+        result = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+        )
+        assert not np.any(np.isnan(result))
+
+    def test_chunking_matches_no_chunking(self, _summation_inputs):
+        """Small chunks produce the same result as a single large chunk."""
+        inp = _summation_inputs
+        full = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+            max_chunk_mb=0,
+        )
+        chunked = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+            max_chunk_mb=1,
+        )
+        np.testing.assert_allclose(full, chunked, rtol=1e-5, atol=1e-8)
+
+    def test_auto_chunk_matches_explicit(self, _summation_inputs):
+        """Auto-detected chunk size matches a large explicit chunk."""
+        inp = _summation_inputs
+        auto = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+            max_chunk_mb=None,
+        )
+        explicit = gaussian_summation(
+            inp["fields"],
+            inp["intensities"],
+            inp["width_gauss"] * inp["widths"],
+            inp["weights"],
+            inp["field_axis"],
+            max_chunk_mb=0,
+        )
+        np.testing.assert_allclose(auto, explicit, rtol=1e-5, atol=1e-8)

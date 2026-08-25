@@ -92,6 +92,14 @@ def multicore(
 ) -> Callable[..., np.ndarray]:
     """Parallelise a simulation routine using :class:`multiprocessing.Pool`.
 
+    .. deprecated::
+        This decorator splits the field axis across processes, which
+        duplicates the entire analytic pipeline per core.  Prefer
+        :func:`radpair.core.do_simulation_multicore`, which parallelises
+        at the chunk level — only the Gaussian summation is distributed,
+        while the expensive tensor/hamiltonian stages run once on the
+        main process.
+
     The decorated function must accept ``(spinsystem, experiment, simopt)``
     and is executed on ``simopt.cpu_cores`` processes, each handling a
     slice of the magnetic-field axis.

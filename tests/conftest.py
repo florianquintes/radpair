@@ -22,6 +22,7 @@ Unit conventions (verified against the source code):
 * ``SimulationOptions.knots`` — number of orientation-grid knots
 * ``SimulationOptions.refinement``  — interpolation factor (1 = no interpolation)
 * ``SimulationOptions.cpu_cores``   — worker processes for multicore (0 = auto-detect)
+* ``SimulationOptions.max_chunk_mb`` — max memory per Gaussian chunk (None = auto, 0 = no limit)
 """
 
 import multiprocessing as mp

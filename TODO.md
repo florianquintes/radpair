@@ -269,15 +269,27 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - Updated TODO.md references.
 - All 178 tests pass; ruff format + check clean; docs build with zero warnings.
 
-### Issue: Improve parallelization
+### Issue: ~~Improve parallelization~~ ✅ Done
 
-- Current `multicore` wrapper splits the field axis and uses `multiprocessing.Pool`.
-- Evaluate `concurrent.futures.ProcessPoolExecutor` or vectorized batch approaches.
-- Ensure `deepcopy` overhead is minimized (Sys is deep-copied per core but is read-only).
-- Consider shared-memory for large arrays.
+- Old `multicore` wrapper split the field axis across processes, duplicating the entire analytic pipeline per core. Now deprecated in `_wrappers.py`.
+- New `do_simulation_multicore` in `core.py` runs the analytic pipeline (stages 1–7) once on the main process, then distributes only the Gaussian summation across worker processes via `multiprocessing.Pool`.
+- Each worker handles a chunk of orientation peaks, bounded by `max_chunk_mb`.
+- `SimulationOptions.max_chunk_mb` controls per-chunk memory: `None` = auto-detect from available RAM (25% cap), `0` = no limit, positive int = explicit MB limit.
+- Added `_get_available_ram()` utility (psutil → /proc/meminfo → vm_stat → 1 GB fallback).
+- Added `gaussian_summation()` and `_compute_chunk_size()` in `functions.py`.
+- `assemble_spectrum` now calls `gaussian_summation` instead of `Spectra.by_summation` directly.
+- Documented `max_chunk_mb` behavior in `examples.rst` with a dedicated "Chunked Gaussian summation" section.
+- Old `multicore` decorator kept for backward compatibility but marked deprecated.
+- 12 new tests: `_get_available_ram` (2), `_compute_chunk_size` (6), `gaussian_summation` (4).
+- All 190 tests pass; ruff format + check clean; docs build with zero warnings.
 
-### Issue: Performance audit
+### Issue: ~~Performance audit~~ ✅ Done
 
-- Profile `do_simulation` with representative inputs.
-- The 5-deep nested loop (`core.py:264-295`) builds Python lists then converts to arrays — vectorize with `np.meshgrid` or `itertools.product` + array conversion.
-- `tensor_rotation` (`functions.py:13`) allocates `eulermatrix` with per-element assignment; consider vectorized construction.
+- Profiled `do_simulation` with cProfile on S7 (5 nuclei) at knots=12, 20, 25.
+- **Result**: 98% of runtime is in `eprbase.Spectra._get_gaussian` (46%) and `Spectra.by_summation` (36%), which build a dense `(n_peaks, n_field)` float32 array. All `radpair` code combined is <2%.
+- The original TODO concerns are all non-issues after refactoring:
+  - ~~"5-deep nested loop builds Python lists"~~ — `compute_hyperfine_combinations` takes 0.003s (0.06%).
+  - ~~"tensor_rotation allocates eulermatrix with per-element assignment"~~ — already vectorized; 27 calls take 0.001s.
+  - ~~"`sphere_fibonacci_grid_points` uses Python loops"~~ — removed entirely.
+- The chunked Gaussian summation (see "Improve parallelization" issue above) addresses the memory bottleneck by splitting the peak array into RAM-bounded chunks.
+- Further performance gains require optimizing `eprbase.Spectra._get_gaussian` (e.g., chunked numexpr evaluation), which is outside the radpair scope.

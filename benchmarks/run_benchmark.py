@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import os
 import sys
-from types import SimpleNamespace
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -42,6 +41,8 @@ from _common import (
     make_experiment,
     make_simopt,
 )
+
+from radpair._types import SimulationOptions
 
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "BENCHMARK.md")
 
@@ -80,7 +81,7 @@ def bench_interpolation_scaling() -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
 
     for refinement in REFINEMENT_VALUES:
-        simopt = SimpleNamespace(
+        simopt = SimulationOptions(
             knots=N_KNOTS,
             refinement=refinement,
             cpu_cores=1,

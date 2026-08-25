@@ -43,6 +43,7 @@ options:
        knots=12,
        refinement=1,
        cpu_cores=1,
+       max_chunk_mb=None,  # auto-detect chunk size from available RAM
    )
 
 The :func:`~radpair.core.do_simulation` function takes three arguments
@@ -274,8 +275,10 @@ Multi-core simulation
 ---------------------
 
 For computationally expensive systems, :func:`~radpair.core.do_simulation_multicore`
-splits the field axis across multiple CPU processes via
-:class:`multiprocessing.Pool`.  The result is numerically identical to
+runs the analytic pipeline once on the main process, then distributes
+the Gaussian peak summation across ``cpu_cores`` worker processes.
+Each worker handles a chunk of peaks, keeping per-process memory
+bounded by ``max_chunk_mb``.  The result is numerically identical to
 the single-core call.
 
 .. code-block:: python
@@ -286,10 +289,56 @@ the single-core call.
    simopt_multicore = SimulationOptions(
        knots=12,
        refinement=1,
-       cpu_cores=4,   # use 4 worker processes (0 = auto-detect)
+       cpu_cores=4,        # use 4 worker processes (0 = auto-detect)
+       max_chunk_mb=None,  # auto-detect chunk size from available RAM
    )
 
    intensity = do_simulation_multicore(spinsystem, experiment, simopt_multicore)
+
+.. _chunked-summation:
+
+Chunked Gaussian summation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The EPR spectrum is assembled by summing Gaussian line shapes for every
+(orientation, hyperfine combination, transition) triplet.  The total
+number of peaks grows as ``n_orientations × n_combinations × 4`` and can
+easily reach hundreds of thousands or millions.  Internally,
+``eprbase`` builds a dense ``float32`` array of shape
+``(n_peaks, n_field)`` for the Gaussian evaluation — at 500 field points
+this consumes ``n_peaks × 2 KB`` of memory.
+
+The ``max_chunk_mb`` option controls how much memory a single chunk may
+use:
+
+- **``None`` (default)** — auto-detect from available RAM (targets 25%
+  of free memory per chunk).  This works well on most systems.
+- **``0`` or negative** — disable chunking entirely.  All peaks are
+  processed in one pass.  Fastest for small systems but may cause
+  out-of-memory errors for large ones.
+- **Positive integer** — maximum memory in megabytes per chunk.
+  Smaller values reduce peak memory at the cost of more iterations.
+  Useful when running multiple simulations in parallel or when the
+  auto-detection is too aggressive.
+
+.. code-block:: python
+
+   # Explicit 512 MB per chunk
+   simopt = SimulationOptions(
+       knots=25,
+       max_chunk_mb=512,
+   )
+
+   # No limit (use with caution on large systems)
+   simopt = SimulationOptions(
+       knots=25,
+       max_chunk_mb=0,
+   )
+
+The same option applies to both :func:`~radpair.core.do_simulation` and
+:func:`~radpair.core.do_simulation_multicore`.  In multicore mode each
+worker respects the limit independently, so the total memory
+requirement is approximately ``cpu_cores × max_chunk_mb``.
 
 .. figure:: _static/spectrum_overview.png
    :alt: Overview of all 7 spectra

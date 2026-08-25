@@ -167,11 +167,20 @@ class SimulationOptions:
     cpu_cores : int
         Number of worker processes for multicore execution.  ``0`` means
         auto-detect via :func:`multiprocessing.cpu_count`.
+    max_chunk_mb : int
+        Maximum memory (in megabytes) allowed for a single Gaussian
+        summation chunk.  If ``0`` or negative, no limit is enforced and
+        all peaks are processed in one pass.  If ``None`` (default), the
+        chunk size is determined automatically from available RAM.
+        Smaller values reduce peak memory usage at the cost of more
+        iterations; larger values are faster but may cause out-of-memory
+        errors.  See :ref:`chunked-summation` for details.
     """
 
     knots: int = 12
     refinement: int = 1
     cpu_cores: int = 1
+    max_chunk_mb: int | None = None
 
 
 def spinsystem_field_names() -> list[str]:
