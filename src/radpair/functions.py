@@ -1,7 +1,6 @@
 """Math helper functions for the radpair package.
 
-Provides unit conversion, tensor rotation, Pascal-triangle generation,
-Fibonacci-sphere grid points, and spherical-coordinate conversion.
+Provides unit conversion, tensor rotation, and Pascal-triangle generation.
 
 (c) M. Sc. Theresia Quintes, M. Sc. Florian Quintes, 2019-2026
 
@@ -358,101 +357,6 @@ def MHz_2_T(nu: float | np.ndarray, g_tensor: np.ndarray) -> float | np.ndarray:
     return nu_tesla
 
 
-def sphere_fibonacci_grid_points(ng: int) -> np.ndarray:
-    """Calculate Fibonacci-spiral grid points on a unit sphere.
-
-    Parameters
-    ----------
-    ng : int
-        Number of grid points to generate.
-
-    Returns
-    -------
-    np.ndarray
-        Cartesian coordinates of the grid points, shape ``(ng, 3)``.
-
-    Notes
-    -----
-    This code is distributed under the GNU LGPL license.
-    Original source:
-    https://people.sc.fsu.edu/~jburkardt/py_src/sphere_fibonacci_grid/sphere_fibonacci_grid.py
-
-    Modified 15 May 2015 by John Burkardt.
-
-    Reference
-    ---------
-    Richard Swinbank, James Purser, "Fibonacci grids: A novel approach
-    to global modelling", Quarterly Journal of the Royal Meteorological
-    Society, Volume 132, Number 619, July 2006 Part B, pages 1769-1793.
-    """
-    phi = (1.0 + np.sqrt(5.0)) / 2.0
-
-    theta = np.zeros(ng)
-    sphi = np.zeros(ng)
-    cphi = np.zeros(ng)
-
-    for i in range(ng):
-        i2 = 2 * i - (ng - 1)
-        theta[i] = 2.0 * np.pi * float(i2) / phi
-        sphi[i] = float(i2) / float(ng)
-        cphi[i] = np.sqrt(float(ng + i2) * float(ng - i2)) / float(ng)
-
-    xg = np.zeros((ng, 3))
-
-    for i in range(ng):
-        xg[i, 0] = cphi[i] * np.sin(theta[i])
-        xg[i, 1] = cphi[i] * np.cos(theta[i])
-        xg[i, 2] = sphi[i]
-
-    return xg
-
-
-def cartesian2spherical(xyz: np.ndarray) -> np.ndarray:
-    """Convert Cartesian coordinates to spherical coordinates.
-
-    Parameters
-    ----------
-    xyz : np.ndarray
-        Cartesian coordinates ``(x, y, z)`` for *n* points, shape
-        ``(n, 3)``.
-
-    Returns
-    -------
-    np.ndarray
-        Spherical coordinates ``(r, theta, phi)`` for each point,
-        shape ``(3, n)``.  Here *theta* is the polar angle (from the
-        z-axis) and *phi* is the azimuthal angle (from the x-axis).
-    """
-    r = np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2 + xyz[:, 2] ** 2)
-    theta = np.arctan2(np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2), xyz[:, 2])
-    phi = np.arctan2(xyz[:, 1], xyz[:, 0])
-    rtp = np.array([r, theta, phi])
-
-    return rtp
-
-
-@lru_cache
-def get_fibonacci_sphere(points: int) -> tuple[np.ndarray, np.ndarray]:
-    """Generate a Fibonacci sphere in spherical coordinates.
-
-    Parameters
-    ----------
-    points : int
-        Number of grid points on the sphere.
-
-    Returns
-    -------
-    theta : np.ndarray
-        Polar angles (from the z-axis) of the grid points.
-    phi : np.ndarray
-        Azimuthal angles (from the x-axis) of the grid points.
-    """
-    xyz = sphere_fibonacci_grid_points(points)
-    _, theta, phi = cartesian2spherical(xyz)
-
-    return theta, phi
-
-
 # ---------------------------------------------------------------------------
 # Composable simulation stages (extracted from do_simulation)
 # ---------------------------------------------------------------------------
@@ -547,7 +451,7 @@ def setup_orientation_grid(
 ]:
     """Set up the orientation grid for spherical integration.
 
-    Creates a coarse (and optionally fine) Fibonacci-sphere grid for
+    Creates a coarse (and optionally fine) orientation grid for
     orientational averaging of the EPR spectrum.
 
     Parameters

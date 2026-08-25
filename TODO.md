@@ -89,7 +89,7 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 
 ### Issue: ~~Tests for `radpair/functions.py`~~ ✅ Done
 
-- `tests/test_functions.py` — 48 tests across 11 test classes:
+- `tests/test_functions.py` — 33 tests across 8 test classes:
   - `tensor_rotation` (8 tests): 2D/3D identity rotation, known-angle rotations (180° about z, 90° about z), `psi=None` default, invalid dimensions, multiple angles, orthogonality preservation.
   - `get_multiplicity` (6 tests): parametrized valid spins (0, 0.5, 1, 1.5), negative spin error, non-half-integer error.
   - `vector_product_combinations` (2 tests): shape and values.
@@ -98,9 +98,6 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
   - `rescale_array` (4 tests): default norm, custom norm, values, zero-sum error.
   - `get_D_diag` (3 tests): known D/E values, zero E, shape.
   - `MHz_2_T` (4 tests): scalar, array, anisotropic g, negative-g error.
-  - `sphere_fibonacci_grid_points` (3 tests): shape, points on unit sphere, single point.
-  - `cartesian2spherical` (4 tests): output shape, unit x, unit z, round-trip.
-  - `get_fibonacci_sphere` (4 tests): lengths, theta range, phi range, cached behavior.
 
 ### Issue: ~~Tests for `radpair/classes.py`~~ ✅ Done
 
@@ -188,7 +185,7 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - `.. math::` directives fixed to use proper LaTeX (e.g. `O^{\mathsf{T}}` instead of `O^{-1}`).
 - `classes.py` — Docstring parameter mismatch fixed (`diag` → `mat`).
 - `core.py` — Parameters standardized to lowercase (`spinsystem`, `experiment`, `simopt`); docstrings reference the Protocol classes.
-- `functions.py` — Added `Examples` section to `vector_product_combinations`; `Raises` sections added to `tensor_rotation`, `get_multiplicity`, `get_generalized_Pascal`, `rescale_array`, `MHz_2_T`; `Notes` section added to `sphere_fibonacci_grid_points`.
+- `functions.py` — Added `Examples` section to `vector_product_combinations`; `Raises` sections added to `tensor_rotation`, `get_multiplicity`, `get_generalized_Pascal`, `rescale_array`, `MHz_2_T`.
 - `classes.py` — `Raises` sections added to `Core.__init__`; class-level docstrings improved with `Attributes` sections.
 - `_wrappers.py` — Module docstring added; all decorator docstrings improved.
 - `api_reference.rst` updated to include `radpair._types` automodule directive.
@@ -250,7 +247,7 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - `do_simulation` was ~280 lines doing unit conversion, tensor setup, rotation, resonance-field calculation, interpolation, and spectrum assembly in one function.
 - Extracted 8 composable functions into `functions.py`:
   1. `prepare_spinsystem` — deep-copies the spin system and converts all parameters to internal angular-frequency units.
-  2. `setup_orientation_grid` — creates coarse/fine Fibonacci-sphere grids and integration weights.
+  2. `setup_orientation_grid` — creates coarse/fine orientation grids and integration weights.
   3. `build_tensors` — builds diagonal tensors and extracts Euler frame angles.
   4. `rotate_tensors` — tilts tensors into reference frames and rotates for each orientation (replaces `cl.Matrix` with direct `tensor_rotation` calls).
   5. `compute_hyperfine_combinations` — computes sum/difference hyperfine matrices and Pascal-triangle weights (replaces `cl.Core` with direct helper calls).
@@ -262,6 +259,15 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - `classes.py` unchanged — `Matrix` and `Core` remain for existing tests and potential future use.
 - 38 new unit tests in `tests/test_stages.py` covering each stage independently (shapes, values, edge cases) plus 2 end-to-end pipeline parity tests.
 - All 162 tests pass (124 existing + 38 new); ruff format + check clean; docs build with zero warnings.
+
+### Issue: ~~Remove deprecated Fibonacci-sphere code~~ ✅ Done
+
+- Removed `sphere_fibonacci_grid_points`, `cartesian2spherical`, and `get_fibonacci_sphere` from `functions.py`.
+- These functions were deprecated: the orientation grid is now constructed by the `eprbase` module (`grid.Grid`), used by `setup_orientation_grid`.
+- Removed 11 corresponding tests (3 test classes) from `tests/test_functions.py`.
+- Updated module docstring and `setup_orientation_grid` docstring to remove Fibonacci references.
+- Updated TODO.md references.
+- All 178 tests pass; ruff format + check clean; docs build with zero warnings.
 
 ### Issue: Improve parallelization
 
@@ -275,4 +281,3 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - Profile `do_simulation` with representative inputs.
 - The 5-deep nested loop (`core.py:264-295`) builds Python lists then converts to arrays — vectorize with `np.meshgrid` or `itertools.product` + array conversion.
 - `tensor_rotation` (`functions.py:13`) allocates `eulermatrix` with per-element assignment; consider vectorized construction.
-- `sphere_fibonacci_grid_points` (`functions.py:318`) uses Python loops; vectorize.

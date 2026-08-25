@@ -6,14 +6,11 @@ import scipy.constants as constant
 
 from radpair.functions import (
     MHz_2_T,
-    cartesian2spherical,
     get_D_diag,
-    get_fibonacci_sphere,
     get_generalized_Pascal,
     get_multiplicity,
     get_normalized_Pascal,
     rescale_array,
-    sphere_fibonacci_grid_points,
     tensor_rotation,
     vector_product_combinations,
 )
@@ -305,103 +302,3 @@ class TestMHz2T:
         g = np.array([2.0, -1.0, 2.0])
         with pytest.raises(ValueError, match="higher than 0"):
             MHz_2_T(1.0, g)
-
-
-# ---------------------------------------------------------------------------
-# sphere_fibonacci_grid_points
-# ---------------------------------------------------------------------------
-
-
-class TestSphereFibonacciGridPoints:
-    """Tests for :func:`sphere_fibonacci_grid_points`."""
-
-    def test_shape(self):
-        ng = 100
-        result = sphere_fibonacci_grid_points(ng)
-        assert result.shape == (ng, 3)
-
-    def test_points_on_unit_sphere(self):
-        ng = 50
-        result = sphere_fibonacci_grid_points(ng)
-        norms = np.sqrt(result[:, 0] ** 2 + result[:, 1] ** 2 + result[:, 2] ** 2)
-        np.testing.assert_allclose(norms, 1.0)
-
-    def test_single_point(self):
-        result = sphere_fibonacci_grid_points(1)
-        assert result.shape == (1, 3)
-        norm = np.linalg.norm(result[0])
-        np.testing.assert_allclose(norm, 1.0)
-
-
-# ---------------------------------------------------------------------------
-# cartesian2spherical
-# ---------------------------------------------------------------------------
-
-
-class TestCartesian2Spherical:
-    """Tests for :func:`cartesian2spherical`."""
-
-    def test_output_shape(self):
-        xyz = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-        result = cartesian2spherical(xyz)
-        assert result.shape == (3, 2)
-
-    def test_unit_x(self):
-        """Point (1, 0, 0) → r=1, theta=π/2, phi=0."""
-        xyz = np.array([[1.0, 0.0, 0.0]])
-        r, theta, phi = cartesian2spherical(xyz)
-        np.testing.assert_allclose(r[0], 1.0)
-        np.testing.assert_allclose(theta[0], np.pi / 2)
-        np.testing.assert_allclose(phi[0], 0.0)
-
-    def test_unit_z(self):
-        """Point (0, 0, 1) → r=1, theta=0, phi=0."""
-        xyz = np.array([[0.0, 0.0, 1.0]])
-        r, theta, _phi = cartesian2spherical(xyz)
-        np.testing.assert_allclose(r[0], 1.0)
-        np.testing.assert_allclose(theta[0], 0.0)
-
-    def test_round_trip(self):
-        """Cartesian → spherical → back to Cartesian via known formulas."""
-        xyz = np.array([[1.0, 2.0, 3.0], [-0.5, 0.3, 1.2], [0.0, -1.0, 0.0]])
-        r, theta, phi = cartesian2spherical(xyz)
-        x = r * np.sin(theta) * np.cos(phi)
-        y = r * np.sin(theta) * np.sin(phi)
-        z = r * np.cos(theta)
-        np.testing.assert_allclose(x, xyz[:, 0], atol=1e-15)
-        np.testing.assert_allclose(y, xyz[:, 1], atol=1e-15)
-        np.testing.assert_allclose(z, xyz[:, 2], atol=1e-15)
-
-
-# ---------------------------------------------------------------------------
-# get_fibonacci_sphere
-# ---------------------------------------------------------------------------
-
-
-class TestGetFibonacciSphere:
-    """Tests for :func:`get_fibonacci_sphere`."""
-
-    def test_lengths(self):
-        n = 100
-        theta, phi = get_fibonacci_sphere(n)
-        assert theta.shape == (n,)
-        assert phi.shape == (n,)
-
-    def test_theta_range(self):
-        """Polar angles should be in [0, π]."""
-        theta, _ = get_fibonacci_sphere(50)
-        assert np.all(theta >= 0)
-        assert np.all(theta <= np.pi)
-
-    def test_phi_range(self):
-        """Azimuthal angles should be in [-π, π]."""
-        _, phi = get_fibonacci_sphere(50)
-        assert np.all(phi >= -np.pi)
-        assert np.all(phi <= np.pi)
-
-    def test_cached(self):
-        """Calling with the same argument returns the same objects (lru_cache)."""
-        t1, p1 = get_fibonacci_sphere(50)
-        t2, p2 = get_fibonacci_sphere(50)
-        assert t1 is t2
-        assert p1 is p2
