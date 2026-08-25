@@ -55,8 +55,8 @@ CPU_CORES_VALUES = [1, 2, 4, 8]
 
 
 def count_active_nuclei(sys: SimpleNamespace) -> int:
-    """Count the number of active nuclei groups (n_i > 0)."""
-    return sum(1 for i in range(1, 6) if getattr(sys, f"n{i}") > 0)
+    """Count the number of active nuclei groups (nuclei_n[i] > 0)."""
+    return sum(1 for n in sys.nuclei_n if n > 0)
 
 
 def bench_call(

@@ -496,11 +496,9 @@ def prepare_spinsystem(
     g_12 = (Sys.g1 + Sys.g2) / 2
 
     for core_n in Sys.acceptor_list:
-        attr = "A" + str(core_n)
-        setattr(Sys, attr, MHz_2_T(getattr(Sys, attr), Sys.g1))
+        Sys.A_tensors[core_n] = MHz_2_T(Sys.A_tensors[core_n], Sys.g1)
     for core_n in Sys.donor_list:
-        attr = "A" + str(core_n)
-        setattr(Sys, attr, MHz_2_T(getattr(Sys, attr), Sys.g2))
+        Sys.A_tensors[core_n] = MHz_2_T(Sys.A_tensors[core_n], Sys.g2)
 
     Sys.D = MHz_2_T(Sys.D, g_12)
     Sys.E = MHz_2_T(Sys.E, g_12)
@@ -510,12 +508,11 @@ def prepare_spinsystem(
     B_z *= 1e-3
     Sys.width_gauss *= 1e-3
 
-    for i in range(1, 6):
-        attr = "A" + str(i)
-        a = getattr(Sys, attr)
+    for i in range(len(Sys.A_tensors)):
+        a = Sys.A_tensors[i]
         if "int" in str(a.dtype):
             a = a.astype("float64")
-        setattr(Sys, attr, a * 0.5 * _GAMMA_E_REF)
+        Sys.A_tensors[i] = a * 0.5 * _GAMMA_E_REF
 
     Sys.D /= 3
     Sys.D *= 0.5
@@ -615,16 +612,13 @@ def build_tensors(
     Returns
     -------
     all_tensors : np.ndarray
-        Stacked diagonal tensors of shape ``(8, 3, 3)`` in the order
-        ``[g1, g2, D, A1, A2, A3, A4, A5]``.
+        Stacked diagonal tensors of shape ``(3 + n_nuclei, 3, 3)`` in the
+        order ``[g1, g2, D, A0, A1, ...]``.
     frame_angles : np.ndarray
         Euler angles ``[alpha, beta, gamma]`` for each tensor, shape
-        ``(8, 3)``.
+        ``(3 + n_nuclei, 3)``.
     """
-    frame_names = ["g1_frame", "g2_frame", "D_frame"] + [
-        f"A{i}_frame" for i in range(1, 6)
-    ]
-    frame_angles = np.array([getattr(Sys, name) for name in frame_names])
+    frame_angles = np.array([Sys.g1_frame, Sys.g2_frame, Sys.D_frame, *Sys.A_frames])
 
     g1 = np.diag(Sys.g1)
     g2 = np.diag(Sys.g2)
@@ -632,7 +626,7 @@ def build_tensors(
     D_diag = get_D_diag(Sys.D, Sys.E)
     D = np.diag(D_diag)
 
-    a_tensors = [np.diag(getattr(Sys, "A" + str(i))) for i in range(1, 6)]
+    a_tensors = [np.diag(a) for a in Sys.A_tensors]
 
     all_tensors = np.array([g1, g2, D, *a_tensors])
 
@@ -655,9 +649,9 @@ def rotate_tensors(
     Parameters
     ----------
     all_tensors : np.ndarray
-        Stacked diagonal tensors, shape ``(8, 3, 3)``.
+        Stacked diagonal tensors, shape ``(3 + n_nuclei, 3, 3)``.
     frame_angles : np.ndarray
-        Euler angles for each tensor, shape ``(8, 3)``.
+        Euler angles for each tensor, shape ``(3 + n_nuclei, 3)``.
     theta_angles : np.ndarray
         Polar angles of the orientation grid.
     phi_angles : np.ndarray
@@ -673,7 +667,7 @@ def rotate_tensors(
     D : np.ndarray
         zz-element of the rotated D tensor, shape ``(N,)``.
     a_projections : list[np.ndarray]
-        Effective hyperfine couplings for each of the 5 nuclei groups,
+        Effective hyperfine couplings for each nuclei group,
         each of shape ``(N,)``.
     """
     tilt_alpha = frame_angles[:, 0]
@@ -686,8 +680,9 @@ def rotate_tensors(
     g2 = tensor_rotation(tilted_tensors[1], phi_angles, theta_angles)[:, -1, -1]
     D = tensor_rotation(tilted_tensors[2], phi_angles, theta_angles)[:, -1, -1]
 
+    n_nuclei = all_tensors.shape[0] - 3
     a_projections = []
-    for i in range(5):
+    for i in range(n_nuclei):
         rotated = tensor_rotation(tilted_tensors[3 + i], phi_angles, theta_angles)
         proj = np.sqrt((rotated[:, :, _Z_COLUMN] ** 2).sum(axis=1))
         a_projections.append(proj)
@@ -708,10 +703,10 @@ def compute_hyperfine_combinations(
     Parameters
     ----------
     Sys : Spinsystem
-        Spin-system object with nuclei group parameters (n1–n5, I1–I5,
-        donor_list, acceptor_list).
+        Spin-system object with nuclei group parameters (nuclei_n,
+        nuclei_I, donor_list, acceptor_list).
     a_projections : list[np.ndarray]
-        Effective hyperfine couplings for each of the 5 nuclei groups,
+        Effective hyperfine couplings for each nuclei group,
         each of shape ``(N,)`` where N is the number of orientations.
 
     Returns
@@ -726,15 +721,15 @@ def compute_hyperfine_combinations(
     core_data = []
     core_types = []
 
-    for i in range(1, 6):
+    for i in range(len(Sys.A_tensors)):
         if i in Sys.acceptor_list:
             ct = 1
-            n = getattr(Sys, "n" + str(i))
-            I = getattr(Sys, "I" + str(i))
+            n = Sys.nuclei_n[i]
+            I = Sys.nuclei_I[i]
         elif i in Sys.donor_list:
             ct = -1
-            n = getattr(Sys, "n" + str(i))
-            I = getattr(Sys, "I" + str(i))
+            n = Sys.nuclei_n[i]
+            I = Sys.nuclei_I[i]
         else:
             ct = 0
             n = 0

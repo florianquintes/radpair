@@ -216,12 +216,21 @@ Restructure `docs/source/index.rst` and add the following pages under `docs/sour
 - Introduce `@dataclass` definitions for `Spinsystem`, `Exp`, `SimOpt` with explicit fields.
 - This enables IDE support, static analysis, and self-documenting code.
 
-### Issue: Remove hardcoded 5-nuclei limit
+### Issue: ~~Remove hardcoded 5-nuclei limit~~ ✅ Done
 
-- `core.py` assumes exactly 5 hyperfine tensors (`A1`–`A5`) and 5 `Core` objects.
-- Refactor to accept a variable-length list of nuclei groups.
-- Update `Matrix`/`Core` usage and the nested hyperfine summation loop accordingly.
-- This is a breaking API change — plan for major version bump.
+- **Breaking API change**: the fixed `A1`–`A5`, `n1`–`n5`, `I1`–`I5`, `A1_frame`–`A5_frame` attributes are replaced by list-based attributes:
+  - `A_tensors` (list of 3-element arrays, variable length)
+  - `nuclei_n` (list of int, same length as `A_tensors`)
+  - `nuclei_I` (list of float, same length as `A_tensors`)
+  - `A_frames` (list of 3-element arrays, same length as `A_tensors`)
+  - `donor_list` / `acceptor_list` are now **0-indexed** (was 1-indexed)
+- The simulation now accepts an arbitrary number of nuclei groups.
+- Updated `Spinsystem` Protocol in `_types.py` to document the new list-based interface.
+- Updated all 4 pipeline functions in `functions.py` (`prepare_spinsystem`, `build_tensors`, `rotate_tensors`, `compute_hyperfine_combinations`) to iterate over `Sys.A_tensors` instead of `range(1, 6)`.
+- `build_tensors` now returns shape `(3 + n_nuclei, 3, 3)` instead of fixed `(8, 3, 3)`.
+- Updated all fixtures in `tests/conftest.py`, `tests/test_smoke.py`, `tests/test_simulation_regression.py`, `tests/test_stages.py`, `tests/generate_reference_spectra.py`, `examples/_systems.py`, `benchmarks/_common.py`, `docs/source/examples.rst`, and `examples/full_five_nuclei.py`.
+- Regenerated all 7 reference `.npz` files with the new API.
+- All 162 tests pass; ruff format + check clean; docs build with zero warnings.
 
 ### Issue: ~~Break `do_simulation` into composable functions~~ ✅ Done
 

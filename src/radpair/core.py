@@ -20,10 +20,10 @@ def do_simulation(
     """Simulate a cw-EPR spectrum for a spin-correlated radical pair.
 
     Solves the spin Hamiltonian analytically using a pseudo-secular
-    approximation for the hyperfine couplings.  Supports up to five
-    anisotropic nuclei groups, each assignable to the donor or acceptor
-    radical.  Zero-field splitting (*D*, *E*) and exchange interaction
-    (*J*) are included.
+    approximation for the hyperfine couplings.  Supports an arbitrary
+    number of anisotropic nuclei groups, each assignable to the donor or
+    acceptor radical.  Zero-field splitting (*D*, *E*) and exchange
+    interaction (*J*) are included.
 
     The simulation is composed of eight stages, each implemented as a
     separate function in :mod:`radpair.functions`:

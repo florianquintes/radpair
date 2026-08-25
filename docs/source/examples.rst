@@ -58,29 +58,33 @@ real-valued intensity array matching the shape of ``experiment.B_z``.
 Unit conventions
 ~~~~~~~~~~~~~~~~
 
-+-------------------+-------------------------------------------+
-| Attribute         | Unit                                      |
-+===================+===========================================+
-| ``Exp.B_z``       | milliTesla                                |
-+-------------------+-------------------------------------------+
-| ``Exp.freq_mw``   | Hz                                        |
-+-------------------+-------------------------------------------+
-| ``Sys.A1``–``A5`` | MHz (3-element arrays)                    |
-+-------------------+-------------------------------------------+
-| ``Sys.D``, ``E``  | MHz                                       |
-+-------------------+-------------------------------------------+
-| ``Sys.J_ex``      | MHz                                       |
-+-------------------+-------------------------------------------+
-| ``Sys.width_gauss`` | milliTesla (despite the name)           |
-+-------------------+-------------------------------------------+
-| ``Sys.*_frame``   | radians (Euler angles [α, β, γ])          |
-+-------------------+-------------------------------------------+
-| ``Sys.g1``, ``g2`` | dimensionless (3-element diagonal)       |
-+-------------------+-------------------------------------------+
-| ``Sys.n*``        | number of equivalent nuclei (int ≥ 0)     |
-+-------------------+-------------------------------------------+
-| ``Sys.I*``        | nuclear spin (float, multiple of ½, ≥ 0)  |
-+-------------------+-------------------------------------------+
++-------------------------+---------------------------------------------+
+| Attribute               | Unit                                        |
++=========================+=============================================+
+| ``Exp.B_z``             | milliTesla                                  |
++-------------------------+---------------------------------------------+
+| ``Exp.freq_mw``         | Hz                                          |
++-------------------------+---------------------------------------------+
+| ``Sys.A_tensors``       | MHz (list of 3-element arrays)              |
++-------------------------+---------------------------------------------+
+| ``Sys.D``, ``E``        | MHz                                         |
++-------------------------+---------------------------------------------+
+| ``Sys.J_ex``            | MHz                                         |
++-------------------------+---------------------------------------------+
+| ``Sys.width_gauss``     | milliTesla (despite the name)               |
++-------------------------+---------------------------------------------+
+| ``Sys.*_frame``         | radians (Euler angles [α, β, γ])            |
++-------------------------+---------------------------------------------+
+| ``Sys.g1``, ``g2``      | dimensionless (3-element diagonal)          |
++-------------------------+---------------------------------------------+
+| ``Sys.nuclei_n``        | list of equivalent-nuclei counts (int ≥ 0)  |
++-------------------------+---------------------------------------------+
+| ``Sys.nuclei_I``        | list of nuclear spins (float, ½ multiples)  |
++-------------------------+---------------------------------------------+
+| ``Sys.donor_list``      | 0-indexed list of donor nuclei positions    |
++-------------------------+---------------------------------------------+
+| ``Sys.acceptor_list``   | 0-indexed list of acceptor nuclei positions |
++-------------------------+---------------------------------------------+
 
 Example 1: Bare radical pair (S1)
 ---------------------------------
@@ -91,26 +95,20 @@ g-tensors, nonzero ZFS (*D* = 8 MHz, *E* = 1.5 MHz) and exchange
 
 .. code-block:: python
 
+   _zero = np.array([0.0, 0.0, 0.0])
+
    spinsystem = SimpleNamespace(
        g1=np.array([2.0023, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
-       A1=np.array([0.0, 0.0, 0.0]),
-       A2=np.array([0.0, 0.0, 0.0]),
-       A3=np.array([0.0, 0.0, 0.0]),
-       A4=np.array([0.0, 0.0, 0.0]),
-       A5=np.array([0.0, 0.0, 0.0]),
+       A_tensors=[_zero, _zero, _zero, _zero, _zero],
+       nuclei_n=[0, 0, 0, 0, 0],
+       nuclei_I=[0.0, 0.0, 0.0, 0.0, 0.0],
        D=8.0, E=1.5, J_ex=2.0,
        width_gauss=0.05,
        g1_frame=np.array([0.1, 0.2, 0.0]),
        g2_frame=np.array([0.0, 0.3, 0.1]),
        D_frame=np.array([0.2, 0.1, 0.0]),
-       A1_frame=np.array([0.0, 0.0, 0.0]),
-       A2_frame=np.array([0.0, 0.0, 0.0]),
-       A3_frame=np.array([0.0, 0.0, 0.0]),
-       A4_frame=np.array([0.0, 0.0, 0.0]),
-       A5_frame=np.array([0.0, 0.0, 0.0]),
-       n1=0, I1=0.0, n2=0, I2=0.0,
-       n3=0, I3=0.0, n4=0, I4=0.0, n5=0, I5=0.0,
+       A_frames=[_zero, _zero, _zero, _zero, _zero],
        donor_list=[], acceptor_list=[],
    )
 
@@ -132,24 +130,14 @@ isotropic g).  A small exchange (*J* = 0.1 MHz) is present; ZFS is zero.
    spinsystem = SimpleNamespace(
        g1=np.array([2.0030, 2.0030, 2.0030]),
        g2=np.array([2.0090, 2.0090, 2.0090]),
-       A1=np.array([1.5, 1.5, 1.5]),
-       A2=np.array([0.0, 0.0, 0.0]),
-       A3=np.array([0.0, 0.0, 0.0]),
-       A4=np.array([0.0, 0.0, 0.0]),
-       A5=np.array([0.0, 0.0, 0.0]),
+       A_tensors=[np.array([1.5, 1.5, 1.5]), _zero, _zero, _zero, _zero],
+       nuclei_n=[1, 0, 0, 0, 0],
+       nuclei_I=[0.5, 0.0, 0.0, 0.0, 0.0],
        D=0.0, E=0.0, J_ex=0.1,
        width_gauss=0.05,
-       g1_frame=np.array([0.0, 0.0, 0.0]),
-       g2_frame=np.array([0.0, 0.0, 0.0]),
-       D_frame=np.array([0.0, 0.0, 0.0]),
-       A1_frame=np.array([0.0, 0.0, 0.0]),
-       A2_frame=np.array([0.0, 0.0, 0.0]),
-       A3_frame=np.array([0.0, 0.0, 0.0]),
-       A4_frame=np.array([0.0, 0.0, 0.0]),
-       A5_frame=np.array([0.0, 0.0, 0.0]),
-       n1=1, I1=0.5, n2=0, I2=0.0,
-       n3=0, I3=0.0, n4=0, I4=0.0, n5=0, I5=0.0,
-       donor_list=[1], acceptor_list=[],
+       g1_frame=_zero, g2_frame=_zero, D_frame=_zero,
+       A_frames=[_zero, _zero, _zero, _zero, _zero],
+       donor_list=[0], acceptor_list=[],
    )
 
 .. image:: _static/spectrum_s2.png
@@ -160,8 +148,8 @@ Example 3: Two anisotropic nuclei, mixed donor/acceptor (S3)
 -------------------------------------------------------------
 
 A more realistic system: the donor carries one ¹H with anisotropic
-hyperfine coupling (*A*₁ = [5, 3, 4] MHz), and the acceptor carries two
-equivalent ¹⁴N nuclei (*I* = 1, *n* = 2, *A*₂ = [2.5, 1.8, 3.2] MHz).
+hyperfine coupling (*A*₀ = [5, 3, 4] MHz), and the acceptor carries two
+equivalent ¹⁴N nuclei (*I* = 1, *n* = 2, *A*₁ = [2.5, 1.8, 3.2] MHz).
 Both g-tensors are anisotropic, and ZFS (*D* = 8, *E* = 1.5 MHz) and
 exchange (*J* = 3 MHz) are nonzero.  Several Euler frames are nonzero,
 so tensors are rotated relative to the lab frame.
@@ -171,24 +159,24 @@ so tensors are rotated relative to the lab frame.
    spinsystem = SimpleNamespace(
        g1=np.array([2.0020, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
-       A1=np.array([5.0, 3.0, 4.0]),
-       A2=np.array([2.5, 1.8, 3.2]),
-       A3=np.array([0.0, 0.0, 0.0]),
-       A4=np.array([0.0, 0.0, 0.0]),
-       A5=np.array([0.0, 0.0, 0.0]),
+       A_tensors=[
+           np.array([5.0, 3.0, 4.0]),
+           np.array([2.5, 1.8, 3.2]),
+           _zero, _zero, _zero,
+       ],
+       nuclei_n=[1, 2, 0, 0, 0],
+       nuclei_I=[0.5, 1.0, 0.0, 0.0, 0.0],
        D=8.0, E=1.5, J_ex=3.0,
        width_gauss=0.05,
        g1_frame=np.array([0.1, 0.2, 0.0]),
        g2_frame=np.array([0.0, 0.3, 0.1]),
        D_frame=np.array([0.2, 0.1, 0.0]),
-       A1_frame=np.array([0.0, 0.1, 0.0]),
-       A2_frame=np.array([0.1, 0.0, 0.0]),
-       A3_frame=np.array([0.0, 0.0, 0.0]),
-       A4_frame=np.array([0.0, 0.0, 0.0]),
-       A5_frame=np.array([0.0, 0.0, 0.0]),
-       n1=1, I1=0.5, n2=2, I2=1.0,
-       n3=0, I3=0.0, n4=0, I4=0.0, n5=0, I5=0.0,
-       donor_list=[1], acceptor_list=[2],
+       A_frames=[
+           np.array([0.0, 0.1, 0.0]),
+           np.array([0.1, 0.0, 0.0]),
+           _zero, _zero, _zero,
+       ],
+       donor_list=[0], acceptor_list=[1],
    )
 
 .. image:: _static/spectrum_s3.png
@@ -208,9 +196,9 @@ nuclei.
 
    # S4: same as S3 but with swapped assignments
    spinsystem_S4 = SimpleNamespace(
-       # ... (same g, A, D, E, J_ex, frames as S3) ...
-       donor_list=[2],      # was [1] in S3
-       acceptor_list=[1],   # was [2] in S3
+       # ... (same g, A_tensors, D, E, J_ex, frames as S3) ...
+       donor_list=[1],      # was [0] in S3
+       acceptor_list=[0],   # was [1] in S3
    )
 
    intensity_S3 = do_simulation(spinsystem_S3, experiment, simopt)
@@ -253,24 +241,27 @@ multiple nuclear spins (*I* = ½, 1, 3/2) and multiplicities (*n* = 1, 2).
    spinsystem = SimpleNamespace(
        g1=np.array([2.0020, 2.0040, 2.0060]),
        g2=np.array([2.0080, 2.0100, 2.0120]),
-       A1=np.array([4.5, 3.0, 5.5]),
-       A2=np.array([2.0, 1.5, 2.8]),
-       A3=np.array([6.0, 4.0, 8.0]),
-       A4=np.array([1.5, 1.0, 2.0]),
-       A5=np.array([3.0, 2.0, 4.0]),
+       A_tensors=[
+           np.array([4.5, 3.0, 5.5]),
+           np.array([2.0, 1.5, 2.8]),
+           np.array([6.0, 4.0, 8.0]),
+           np.array([1.5, 1.0, 2.0]),
+           np.array([3.0, 2.0, 4.0]),
+       ],
+       nuclei_n=[1, 2, 1, 1, 2],
+       nuclei_I=[0.5, 1.0, 1.5, 0.5, 0.5],
        D=10.0, E=2.0, J_ex=5.0,
        width_gauss=0.05,
        g1_frame=np.array([0.1, 0.2, 0.0]),
        g2_frame=np.array([0.0, 0.3, 0.1]),
        D_frame=np.array([0.2, 0.1, 0.0]),
-       A1_frame=np.array([0.1, 0.0, 0.0]),
-       A2_frame=np.array([0.0, 0.1, 0.0]),
-       A3_frame=np.array([0.1, 0.1, 0.0]),
-       A4_frame=np.array([0.0, 0.0, 0.0]),
-       A5_frame=np.array([0.0, 0.0, 0.0]),
-       n1=1, I1=0.5, n2=2, I2=1.0, n3=1, I3=1.5,
-       n4=1, I4=0.5, n5=2, I5=0.5,
-       donor_list=[1, 2, 3], acceptor_list=[4, 5],
+       A_frames=[
+           np.array([0.1, 0.0, 0.0]),
+           np.array([0.0, 0.1, 0.0]),
+           np.array([0.1, 0.1, 0.0]),
+           _zero, _zero,
+       ],
+       donor_list=[0, 1, 2], acceptor_list=[3, 4],
    )
 
 .. image:: _static/spectrum_s7.png

@@ -2,7 +2,7 @@
 
 The fixtures construct minimal valid ``Spinsystem``, ``Exp``, and ``SimOpt``
 objects using :class:`types.SimpleNamespace`, which supports the dynamic-
-attribute interface (``vars(obj)``, ``getattr``, ``setattr``) that
+attribute interface (``getattr``, ``setattr``) that
 :func:`radpair.core.do_simulation` expects.
 
 Unit conventions (verified against the source code):
@@ -10,15 +10,16 @@ Unit conventions (verified against the source code):
 * ``Exp.B_z``            — magnetic field axis in **milliTesla**
 * ``Exp.freq_mw``        — microwave frequency in **Hz**
 * ``Sys.width_gauss``    — linewidth in **milliTesla** (despite the name)
-* ``Sys.A1``–``Sys.A5``  — hyperfine couplings in **MHz** (3-element arrays)
+* ``Sys.A_tensors``      — list of hyperfine couplings in **MHz** (3-element arrays)
+* ``Sys.nuclei_n``       — list of equivalent-nuclei counts (int, >= 0)
+* ``Sys.nuclei_I``       — list of nuclear spins (float, multiple of 0.5, >= 0)
+* ``Sys.A_frames``       — list of Euler angles in **radians** (3-element: [alpha, beta, gamma])
 * ``Sys.D``, ``Sys.E``   — ZFS parameters in **MHz**
 * ``Sys.J_ex``           — exchange interaction in **MHz**
 * ``Sys.g1``, ``Sys.g2`` — g-tensor diagonal (dimensionless, all positive)
-* ``Sys.*_frame``        — Euler angles in **radians** (3-element: [alpha, beta, gamma])
-* ``Sys.n*``             — number of equivalent nuclei (int, >= 0)
-* ``Sys.I*``             — nuclear spin (float, multiple of 0.5, >= 0)
-* ``Sys.donor_list``     — list of core indices assigned to the donor radical
-* ``Sys.acceptor_list``  — list of core indices assigned to the acceptor radical
+* ``Sys.g1_frame``, ``Sys.g2_frame``, ``Sys.D_frame`` — Euler angles in **radians**
+* ``Sys.donor_list``     — 0-indexed list of nuclei group positions on the donor radical
+* ``Sys.acceptor_list``  — 0-indexed list of nuclei group positions on the acceptor radical
 * ``SimOpt.grid_points`` — number of orientation-grid knots
 * ``SimOpt.refinement``  — interpolation factor (1 = no interpolation)
 * ``SimOpt.cpu_cores``   — worker processes for multicore (0 = auto-detect)
@@ -41,6 +42,9 @@ except RuntimeError:
 # Spinsystem fixtures
 # ---------------------------------------------------------------------------
 
+_ZERO_A = np.array([0.0, 0.0, 0.0])
+_ZERO_FRAME = np.array([0.0, 0.0, 0.0])
+
 
 def _make_minimal_spinsystem() -> SimpleNamespace:
     """Return a minimal spinsystem with one donor nucleus, no ZFS or exchange.
@@ -51,34 +55,24 @@ def _make_minimal_spinsystem() -> SimpleNamespace:
     return SimpleNamespace(
         g1=np.array([2.003, 2.003, 2.003]),
         g2=np.array([2.007, 2.007, 2.007]),
-        A1=np.array([1.5, 1.5, 1.5]),
-        A2=np.array([0.0, 0.0, 0.0]),
-        A3=np.array([0.0, 0.0, 0.0]),
-        A4=np.array([0.0, 0.0, 0.0]),
-        A5=np.array([0.0, 0.0, 0.0]),
+        A_tensors=[
+            np.array([1.5, 1.5, 1.5]),
+            _ZERO_A,
+            _ZERO_A,
+            _ZERO_A,
+            _ZERO_A,
+        ],
+        nuclei_n=[1, 0, 0, 0, 0],
+        nuclei_I=[0.5, 0.0, 0.0, 0.0, 0.0],
         D=0.0,
         E=0.0,
         J_ex=0.0,
         width_gauss=0.5,
-        g1_frame=np.array([0.0, 0.0, 0.0]),
-        g2_frame=np.array([0.0, 0.0, 0.0]),
-        D_frame=np.array([0.0, 0.0, 0.0]),
-        A1_frame=np.array([0.0, 0.0, 0.0]),
-        A2_frame=np.array([0.0, 0.0, 0.0]),
-        A3_frame=np.array([0.0, 0.0, 0.0]),
-        A4_frame=np.array([0.0, 0.0, 0.0]),
-        A5_frame=np.array([0.0, 0.0, 0.0]),
-        n1=1,
-        I1=0.5,
-        n2=0,
-        I2=0.0,
-        n3=0,
-        I3=0.0,
-        n4=0,
-        I4=0.0,
-        n5=0,
-        I5=0.0,
-        donor_list=[1],
+        g1_frame=_ZERO_FRAME,
+        g2_frame=_ZERO_FRAME,
+        D_frame=_ZERO_FRAME,
+        A_frames=[_ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME],
+        donor_list=[0],
         acceptor_list=[],
     )
 
@@ -93,11 +87,15 @@ def _make_full_spinsystem() -> SimpleNamespace:
     return SimpleNamespace(
         g1=np.array([2.002, 2.006, 2.010]),
         g2=np.array([2.005, 2.003, 2.001]),
-        A1=np.array([5.0, 5.0, 5.0]),
-        A2=np.array([3.0, 3.0, 3.0]),
-        A3=np.array([2.0, 2.0, 2.0]),
-        A4=np.array([0.0, 0.0, 0.0]),
-        A5=np.array([0.0, 0.0, 0.0]),
+        A_tensors=[
+            np.array([5.0, 5.0, 5.0]),
+            np.array([3.0, 3.0, 3.0]),
+            np.array([2.0, 2.0, 2.0]),
+            _ZERO_A,
+            _ZERO_A,
+        ],
+        nuclei_n=[1, 1, 1, 0, 0],
+        nuclei_I=[0.5, 0.5, 1.0, 0.0, 0.0],
         D=10.0,
         E=2.0,
         J_ex=5.0,
@@ -105,23 +103,15 @@ def _make_full_spinsystem() -> SimpleNamespace:
         g1_frame=np.array([0.1, 0.2, 0.0]),
         g2_frame=np.array([0.0, 0.3, 0.1]),
         D_frame=np.array([0.2, 0.1, 0.0]),
-        A1_frame=np.array([0.0, 0.0, 0.0]),
-        A2_frame=np.array([0.1, 0.0, 0.0]),
-        A3_frame=np.array([0.0, 0.1, 0.0]),
-        A4_frame=np.array([0.0, 0.0, 0.0]),
-        A5_frame=np.array([0.0, 0.0, 0.0]),
-        n1=1,
-        I1=0.5,
-        n2=1,
-        I2=0.5,
-        n3=1,
-        I3=1.0,
-        n4=0,
-        I4=0.0,
-        n5=0,
-        I5=0.0,
-        donor_list=[1, 3],
-        acceptor_list=[2],
+        A_frames=[
+            _ZERO_FRAME,
+            np.array([0.1, 0.0, 0.0]),
+            np.array([0.0, 0.1, 0.0]),
+            _ZERO_FRAME,
+            _ZERO_FRAME,
+        ],
+        donor_list=[0, 2],
+        acceptor_list=[1],
     )
 
 
@@ -130,34 +120,24 @@ def _make_donor_only_spinsystem() -> SimpleNamespace:
     return SimpleNamespace(
         g1=np.array([2.003, 2.003, 2.003]),
         g2=np.array([2.007, 2.007, 2.007]),
-        A1=np.array([3.0, 3.0, 3.0]),
-        A2=np.array([1.5, 1.5, 1.5]),
-        A3=np.array([0.0, 0.0, 0.0]),
-        A4=np.array([0.0, 0.0, 0.0]),
-        A5=np.array([0.0, 0.0, 0.0]),
+        A_tensors=[
+            np.array([3.0, 3.0, 3.0]),
+            np.array([1.5, 1.5, 1.5]),
+            _ZERO_A,
+            _ZERO_A,
+            _ZERO_A,
+        ],
+        nuclei_n=[2, 1, 0, 0, 0],
+        nuclei_I=[0.5, 0.5, 0.0, 0.0, 0.0],
         D=5.0,
         E=1.0,
         J_ex=2.0,
         width_gauss=0.3,
-        g1_frame=np.array([0.0, 0.0, 0.0]),
-        g2_frame=np.array([0.0, 0.0, 0.0]),
-        D_frame=np.array([0.0, 0.0, 0.0]),
-        A1_frame=np.array([0.0, 0.0, 0.0]),
-        A2_frame=np.array([0.0, 0.0, 0.0]),
-        A3_frame=np.array([0.0, 0.0, 0.0]),
-        A4_frame=np.array([0.0, 0.0, 0.0]),
-        A5_frame=np.array([0.0, 0.0, 0.0]),
-        n1=2,
-        I1=0.5,
-        n2=1,
-        I2=0.5,
-        n3=0,
-        I3=0.0,
-        n4=0,
-        I4=0.0,
-        n5=0,
-        I5=0.0,
-        donor_list=[1, 2],
+        g1_frame=_ZERO_FRAME,
+        g2_frame=_ZERO_FRAME,
+        D_frame=_ZERO_FRAME,
+        A_frames=[_ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME],
+        donor_list=[0, 1],
         acceptor_list=[],
     )
 
@@ -167,35 +147,25 @@ def _make_acceptor_only_spinsystem() -> SimpleNamespace:
     return SimpleNamespace(
         g1=np.array([2.003, 2.003, 2.003]),
         g2=np.array([2.007, 2.007, 2.007]),
-        A1=np.array([3.0, 3.0, 3.0]),
-        A2=np.array([1.5, 1.5, 1.5]),
-        A3=np.array([0.0, 0.0, 0.0]),
-        A4=np.array([0.0, 0.0, 0.0]),
-        A5=np.array([0.0, 0.0, 0.0]),
+        A_tensors=[
+            np.array([3.0, 3.0, 3.0]),
+            np.array([1.5, 1.5, 1.5]),
+            _ZERO_A,
+            _ZERO_A,
+            _ZERO_A,
+        ],
+        nuclei_n=[2, 1, 0, 0, 0],
+        nuclei_I=[0.5, 0.5, 0.0, 0.0, 0.0],
         D=5.0,
         E=1.0,
         J_ex=2.0,
         width_gauss=0.3,
-        g1_frame=np.array([0.0, 0.0, 0.0]),
-        g2_frame=np.array([0.0, 0.0, 0.0]),
-        D_frame=np.array([0.0, 0.0, 0.0]),
-        A1_frame=np.array([0.0, 0.0, 0.0]),
-        A2_frame=np.array([0.0, 0.0, 0.0]),
-        A3_frame=np.array([0.0, 0.0, 0.0]),
-        A4_frame=np.array([0.0, 0.0, 0.0]),
-        A5_frame=np.array([0.0, 0.0, 0.0]),
-        n1=2,
-        I1=0.5,
-        n2=1,
-        I2=0.5,
-        n3=0,
-        I3=0.0,
-        n4=0,
-        I4=0.0,
-        n5=0,
-        I5=0.0,
+        g1_frame=_ZERO_FRAME,
+        g2_frame=_ZERO_FRAME,
+        D_frame=_ZERO_FRAME,
+        A_frames=[_ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME, _ZERO_FRAME],
         donor_list=[],
-        acceptor_list=[1, 2],
+        acceptor_list=[0, 1],
     )
 
 

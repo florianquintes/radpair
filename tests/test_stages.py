@@ -47,15 +47,15 @@ class TestPrepareSpinsystem:
         np.testing.assert_allclose(Sys.g2, minimal_spinsystem.g2 * 0.5)
 
     def test_a_tensors_converted(self, minimal_spinsystem, experiment):
-        """A1 (donor) should be converted from MHz to angular frequency with 0.5 factor."""
+        """A_tensors[0] (donor) should be converted from MHz to angular frequency with 0.5 factor."""
         from radpair.functions import MHz_2_T
 
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
-        expected_a1 = MHz_2_T(minimal_spinsystem.A1, minimal_spinsystem.g2)
-        expected_a1 = expected_a1 * 0.5 * _GAMMA_E_REF
-        np.testing.assert_allclose(Sys.A1, expected_a1)
+        expected_a0 = MHz_2_T(minimal_spinsystem.A_tensors[0], minimal_spinsystem.g2)
+        expected_a0 = expected_a0 * 0.5 * _GAMMA_E_REF
+        np.testing.assert_allclose(Sys.A_tensors[0], expected_a0)
 
     def test_d_e_j_ex_converted(self, full_spinsystem, experiment):
         """D, E, J_ex should be converted from MHz to angular frequency."""
@@ -111,11 +111,15 @@ class TestPrepareSpinsystem:
         sys_int = SimpleNamespace(
             g1=np.array([2.0, 2.0, 2.0]),
             g2=np.array([2.0, 2.0, 2.0]),
-            A1=np.array([1, 1, 1], dtype=np.int64),
-            A2=np.array([0, 0, 0], dtype=np.int64),
-            A3=np.array([0, 0, 0], dtype=np.int64),
-            A4=np.array([0, 0, 0], dtype=np.int64),
-            A5=np.array([0, 0, 0], dtype=np.int64),
+            A_tensors=[
+                np.array([1, 1, 1], dtype=np.int64),
+                np.array([0, 0, 0], dtype=np.int64),
+                np.array([0, 0, 0], dtype=np.int64),
+                np.array([0, 0, 0], dtype=np.int64),
+                np.array([0, 0, 0], dtype=np.int64),
+            ],
+            nuclei_n=[1, 0, 0, 0, 0],
+            nuclei_I=[0.5, 0.0, 0.0, 0.0, 0.0],
             D=0.0,
             E=0.0,
             J_ex=0.0,
@@ -123,26 +127,18 @@ class TestPrepareSpinsystem:
             g1_frame=np.array([0.0, 0.0, 0.0]),
             g2_frame=np.array([0.0, 0.0, 0.0]),
             D_frame=np.array([0.0, 0.0, 0.0]),
-            A1_frame=np.array([0.0, 0.0, 0.0]),
-            A2_frame=np.array([0.0, 0.0, 0.0]),
-            A3_frame=np.array([0.0, 0.0, 0.0]),
-            A4_frame=np.array([0.0, 0.0, 0.0]),
-            A5_frame=np.array([0.0, 0.0, 0.0]),
-            n1=1,
-            I1=0.5,
-            n2=0,
-            I2=0.0,
-            n3=0,
-            I3=0.0,
-            n4=0,
-            I4=0.0,
-            n5=0,
-            I5=0.0,
-            donor_list=[1],
+            A_frames=[
+                np.array([0.0, 0.0, 0.0]),
+                np.array([0.0, 0.0, 0.0]),
+                np.array([0.0, 0.0, 0.0]),
+                np.array([0.0, 0.0, 0.0]),
+                np.array([0.0, 0.0, 0.0]),
+            ],
+            donor_list=[0],
             acceptor_list=[],
         )
         Sys, _, _ = prepare_spinsystem(sys_int, 9.5e9, np.linspace(340, 350, 10))
-        assert Sys.A1.dtype == np.float64
+        assert Sys.A_tensors[0].dtype == np.float64
 
 
 # ---------------------------------------------------------------------------
@@ -193,20 +189,22 @@ class TestBuildTensors:
     """Tests for :func:`build_tensors`."""
 
     def test_all_tensors_shape(self, minimal_spinsystem, experiment):
-        """all_tensors should have shape (8, 3, 3)."""
+        """all_tensors should have shape (3 + n_nuclei, 3, 3)."""
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
         all_tensors, _frame_angles = build_tensors(Sys)
-        assert all_tensors.shape == (8, 3, 3)
+        n_nuclei = len(Sys.A_tensors)
+        assert all_tensors.shape == (3 + n_nuclei, 3, 3)
 
     def test_frame_angles_shape(self, minimal_spinsystem, experiment):
-        """frame_angles should have shape (8, 3)."""
+        """frame_angles should have shape (3 + n_nuclei, 3)."""
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
         _, frame_angles = build_tensors(Sys)
-        assert frame_angles.shape == (8, 3)
+        n_nuclei = len(Sys.A_tensors)
+        assert frame_angles.shape == (3 + n_nuclei, 3)
 
     def test_g_tensors_diagonal(self, minimal_spinsystem, experiment):
         """g1 and g2 tensors should be diagonal with halved g-values."""
@@ -312,7 +310,7 @@ class TestComputeHyperfineCombinations:
         assert A_2.shape == (n, n_comb, 1)
 
     def test_n_combinations_minimal(self, minimal_spinsystem, experiment):
-        """Minimal system has 1 active group (n1=1, I1=0.5) → 2 combinations."""
+        """Minimal system has 1 active group (n=1, I=0.5) → 2 combinations."""
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
@@ -339,7 +337,7 @@ class TestComputeHyperfineCombinations:
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
         )
         n = 12
-        a_projections = [np.zeros(n) for _ in range(5)]
+        a_projections = [np.zeros(n) for _ in range(len(Sys.A_tensors))]
         A_1, A_2, _ = compute_hyperfine_combinations(Sys, a_projections)
         np.testing.assert_allclose(A_1, 0.0)
         np.testing.assert_allclose(A_2, 0.0)

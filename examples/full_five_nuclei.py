@@ -1,9 +1,9 @@
 """Example: five nuclei, maximum complexity (S7).
 
-The most complex system supported by radpair: all five nuclei groups
-are active (3 donor + 2 acceptor), with anisotropic g-tensors, full ZFS
-(D = 10, E = 2 MHz), exchange (J = 5 MHz), and multiple nuclear spins
-(I = ½, 1, 3/2) and multiplicities (n = 1, 2).
+A complex system with all five nuclei groups active (3 donor + 2
+acceptor), anisotropic g-tensors, full ZFS (D = 10, E = 2 MHz),
+exchange (J = 5 MHz), and multiple nuclear spins (I = ½, 1, 3/2) and
+multiplicities (n = 1, 2).
 
 Run::
 

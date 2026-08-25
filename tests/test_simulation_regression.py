@@ -41,11 +41,9 @@ SPECTRA_NAMES = ["S1", "S2", "S3", "S4", "S5", "S6", "S7"]
 _SPINSYSTEM_KEYS = [
     "g1",
     "g2",
-    "A1",
-    "A2",
-    "A3",
-    "A4",
-    "A5",
+    "A_tensors",
+    "nuclei_n",
+    "nuclei_I",
     "D",
     "E",
     "J_ex",
@@ -53,21 +51,7 @@ _SPINSYSTEM_KEYS = [
     "g1_frame",
     "g2_frame",
     "D_frame",
-    "A1_frame",
-    "A2_frame",
-    "A3_frame",
-    "A4_frame",
-    "A5_frame",
-    "n1",
-    "I1",
-    "n2",
-    "I2",
-    "n3",
-    "I3",
-    "n4",
-    "I4",
-    "n5",
-    "I5",
+    "A_frames",
     "donor_list",
     "acceptor_list",
 ]
@@ -82,10 +66,10 @@ def _load_reference(
     sys_kwargs: dict[str, object] = {}
     for key in _SPINSYSTEM_KEYS:
         val = data[key]
-        if key in ("donor_list", "acceptor_list"):
+        if key in ("donor_list", "acceptor_list", "nuclei_n", "nuclei_I"):
             sys_kwargs[key] = list(val.tolist()) if val.size > 0 else []
-        elif key.startswith(("n", "I")) and key[1:].isdigit():
-            sys_kwargs[key] = val.item()
+        elif key in ("A_tensors", "A_frames"):
+            sys_kwargs[key] = [np.array(v, dtype=float) for v in val]
         else:
             sys_kwargs[key] = np.array(val, dtype=float)
     spinsystem = SimpleNamespace(**sys_kwargs)
