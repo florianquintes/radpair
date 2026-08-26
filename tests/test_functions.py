@@ -1,16 +1,14 @@
-"""Tests for :mod:`radpair.functions`."""
+"""Tests for the radpair math and physics modules."""
 
 import numpy as np
 import pytest
 import scipy.constants as constant
 
-from radpair.functions import (
-    MHz_2_T,
-    get_D_diag,
+from radpair.hamiltonian import MHz_2_T, get_D_diag, tensor_rotation
+from radpair.hyperfine import (
     get_generalized_Pascal,
     get_multiplicity,
     get_normalized_Pascal,
-    tensor_rotation,
 )
 
 # ---------------------------------------------------------------------------

@@ -8,8 +8,20 @@
 import numpy as np
 from eprbase import interpolation as interp
 
-import radpair.functions as fun
 from radpair._types import Experiment, SimulationOptions, Spinsystem
+from radpair.hamiltonian import (
+    _GAMMA_E_REF,
+    compute_intensities,
+    compute_resonance_fields,
+)
+from radpair.hyperfine import compute_hyperfine_combinations
+from radpair.pipeline import (
+    build_tensors,
+    prepare_spinsystem,
+    rotate_tensors,
+    setup_orientation_grid,
+)
+from radpair.summation import _compute_chunk_size, gaussian_summation
 
 
 def _run_pipeline(
@@ -23,30 +35,28 @@ def _run_pipeline(
     -------
     tuple
         ``(fields, intensities, widths, weights, field_axis, max_chunk_mb)``
-        ready to pass to :func:`~radpair.functions.gaussian_summation`.
+        ready to pass to :func:`~radpair.summation.gaussian_summation`.
     """
-    Sys, freq_mw, _ = fun.prepare_spinsystem(
-        spinsystem, experiment.freq_mw, experiment.B_z
-    )
+    Sys, freq_mw, _ = prepare_spinsystem(spinsystem, experiment.freq_mw, experiment.B_z)
 
-    theta, phi, theta_fine, phi_fine, weights, interp_mode = fun.setup_orientation_grid(
+    theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
         simopt.knots, simopt.refinement
     )
 
-    all_tensors, frame_angles = fun.build_tensors(Sys)
+    all_tensors, frame_angles = build_tensors(Sys)
 
-    g1, g2, D, a_projections = fun.rotate_tensors(all_tensors, frame_angles, theta, phi)
+    g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
 
-    A_1, A_2, spec_weights = fun.compute_hyperfine_combinations(Sys, a_projections)
+    A_1, A_2, spec_weights = compute_hyperfine_combinations(Sys, a_projections)
 
-    res_fields, delta_omega, quantum_beat, widths = fun.compute_resonance_fields(
+    res_fields, delta_omega, quantum_beat, widths = compute_resonance_fields(
         Sys.J_ex, freq_mw, g1, g2, D, A_1, A_2
     )
 
-    intensities = fun.compute_intensities(delta_omega, quantum_beat)
+    intensities = compute_intensities(delta_omega, quantum_beat)
 
     # Flatten to (n_orient, n_comb * 4)
-    fields_mT = res_fields / fun._GAMMA_E_REF * 1e3
+    fields_mT = res_fields / _GAMMA_E_REF * 1e3
     shp = (theta.size, fields_mT.shape[1] * fields_mT.shape[2])
     fields_flat = fields_mT.reshape(shp)
     widths_flat = widths.reshape(shp)
@@ -86,17 +96,16 @@ def do_simulation(
     acceptor radical.  Zero-field splitting (*D*, *E*) and exchange
     interaction (*J*) are included.
 
-    The simulation is composed of eight stages, each implemented as a
-    separate function in :mod:`radpair.functions`:
+    The simulation is composed of eight stages:
 
-    1. :func:`~radpair.functions.prepare_spinsystem` — unit conversion
-    2. :func:`~radpair.functions.setup_orientation_grid` — grid setup
-    3. :func:`~radpair.functions.build_tensors` — diagonal tensors
-    4. :func:`~radpair.functions.rotate_tensors` — frame + orientation rotation
-    5. :func:`~radpair.functions.compute_hyperfine_combinations` — hyperfine sums
-    6. :func:`~radpair.functions.compute_resonance_fields` — resonance fields
-    7. :func:`~radpair.functions.compute_intensities` — line intensities
-    8. :func:`~radpair.functions.gaussian_summation` — Gaussian line-shape summation
+    1. :func:`~radpair.pipeline.prepare_spinsystem` — unit conversion
+    2. :func:`~radpair.pipeline.setup_orientation_grid` — grid setup
+    3. :func:`~radpair.pipeline.build_tensors` — diagonal tensors
+    4. :func:`~radpair.pipeline.rotate_tensors` — frame + orientation rotation
+    5. :func:`~radpair.hyperfine.compute_hyperfine_combinations` — hyperfine sums
+    6. :func:`~radpair.hamiltonian.compute_resonance_fields` — resonance fields
+    7. :func:`~radpair.hamiltonian.compute_intensities` — line intensities
+    8. :func:`~radpair.summation.gaussian_summation` — Gaussian line-shape summation
 
     Parameters
     ----------
@@ -118,7 +127,7 @@ def do_simulation(
         the shape of ``experiment.B_z``.
     """
     data = _run_pipeline(spinsystem, experiment, simopt)
-    intensity = fun.gaussian_summation(*data)
+    intensity = gaussian_summation(*data)
     return np.nan_to_num(intensity)
 
 
@@ -163,7 +172,7 @@ def do_simulation_multicore(
     n_orient, n_peaks = fields.shape
     total_peaks = n_orient * n_peaks
 
-    chunk_size = fun._compute_chunk_size(total_peaks, field_axis.shape[0], max_chunk_mb)
+    chunk_size = _compute_chunk_size(total_peaks, field_axis.shape[0], max_chunk_mb)
     chunk_orient = max(1, chunk_size // n_peaks)
 
     if n_cores > 1:
@@ -193,10 +202,10 @@ def do_simulation_multicore(
     if n_cores <= 1 or n_chunks <= 1:
         spectrum = np.zeros(field_axis.shape[0], dtype=np.float32)
         for args in args_list:
-            spectrum += fun.gaussian_summation(*args)
+            spectrum += gaussian_summation(*args)
     else:
         with Pool(processes=min(n_cores, n_chunks)) as pool:
-            results = pool.starmap(fun.gaussian_summation, args_list)
+            results = pool.starmap(gaussian_summation, args_list)
         spectrum = np.sum(results, axis=0).astype(np.float32)
 
     return np.nan_to_num(spectrum)

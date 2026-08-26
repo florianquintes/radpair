@@ -13,8 +13,16 @@ The package uses a ``src`` layout. All package code lives under
 
 * ``core.py`` — entry points ``do_simulation`` and
   ``do_simulation_multicore``.
-* ``functions.py`` — math helpers (unit conversion, Pascal triangles, tensor
-  rotation, grid generation).
+* ``_types.py`` — typed dataclasses (``Spinsystem``, ``Experiment``,
+  ``SimulationOptions``) with ``__post_init__`` validation.
+* ``hamiltonian.py`` — tensor rotation, unit conversion, resonance-field
+  and intensity computation (physics math).
+* ``hyperfine.py`` — multiplicities, generalized Pascal triangles, and
+  hyperfine combination logic.
+* ``pipeline.py`` — unit conversion, orientation-grid setup, tensor
+  construction and rotation (pipeline stages 1–4).
+* ``summation.py`` — chunked Gaussian line-shape summation and memory
+  management.
 
 ``__init__.py`` is empty; there are no public re-exports. Import directly
 from submodules. The package depends on `eprbase <https://pypi.org/project/eprbase/>`_

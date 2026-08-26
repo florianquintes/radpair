@@ -41,6 +41,17 @@ Module Overview
    * - ``radpair.core``
      - Entry points for single-core (``do_simulation``) and multi-core
        (``do_simulation_multicore``) simulation.
-   * - ``radpair.functions``
-     - Math helpers: unit conversion, Pascal triangles, tensor rotation,
-       and spherical grid generation.
+   * - ``radpair._types``
+     - Typed dataclasses (``Spinsystem``, ``Experiment``,
+       ``SimulationOptions``) with validation.
+   * - ``radpair.hamiltonian``
+     - Tensor rotation, unit conversion, resonance-field and intensity
+       computation (physics math).
+   * - ``radpair.hyperfine``
+     - Multiplicities, generalized Pascal triangles, and hyperfine
+       combination logic.
+   * - ``radpair.pipeline``
+     - Unit conversion, orientation-grid setup, tensor construction and
+       rotation (pipeline stages 1–4).
+   * - ``radpair.summation``
+     - Chunked Gaussian line-shape summation and memory management.

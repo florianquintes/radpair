@@ -1,4 +1,4 @@
-"""Unit tests for the composable simulation stages in :mod:`radpair.functions`.
+"""Unit tests for the composable simulation stages.
 
 Each of the 8 functions extracted from ``do_simulation`` is tested
 independently for shape, dtype, value-range, and known-value cases.
@@ -9,19 +9,23 @@ systems, experiments, and simulation options.
 import numpy as np
 import pytest
 
-from radpair.functions import (
+from radpair.hamiltonian import (
     _GAMMA_E_REF,
     _GAUSSIAN_FWHM_TO_SIGMA,
-    _compute_chunk_size,
-    _get_available_ram,
-    build_tensors,
-    compute_hyperfine_combinations,
     compute_intensities,
     compute_resonance_fields,
-    gaussian_summation,
+)
+from radpair.hyperfine import compute_hyperfine_combinations
+from radpair.pipeline import (
+    build_tensors,
     prepare_spinsystem,
     rotate_tensors,
     setup_orientation_grid,
+)
+from radpair.summation import (
+    _compute_chunk_size,
+    _get_available_ram,
+    gaussian_summation,
 )
 
 # ---------------------------------------------------------------------------
@@ -50,7 +54,7 @@ class TestPrepareSpinsystem:
 
     def test_a_tensors_converted(self, minimal_spinsystem, experiment):
         """A_tensors[0] (donor) should be converted from MHz to angular frequency with 0.5 factor."""
-        from radpair.functions import MHz_2_T
+        from radpair.hamiltonian import MHz_2_T
 
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
@@ -61,7 +65,7 @@ class TestPrepareSpinsystem:
 
     def test_d_e_j_ex_converted(self, full_spinsystem, experiment):
         """D, E, J_ex should be converted from MHz to angular frequency."""
-        from radpair.functions import MHz_2_T
+        from radpair.hamiltonian import MHz_2_T
 
         Sys, _, _ = prepare_spinsystem(
             full_spinsystem, experiment.freq_mw, experiment.B_z
@@ -213,7 +217,7 @@ class TestBuildTensors:
 
     def test_d_tensor_diag_matches_get_D_diag(self, full_spinsystem, experiment):
         """D tensor diagonal should match get_D_diag(Sys.D, Sys.E)."""
-        from radpair.functions import get_D_diag
+        from radpair.hamiltonian import get_D_diag
 
         Sys, _, _ = prepare_spinsystem(
             full_spinsystem, experiment.freq_mw, experiment.B_z
