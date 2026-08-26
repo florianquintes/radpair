@@ -8,7 +8,6 @@ import sys
 import time
 from copy import deepcopy
 from datetime import UTC, datetime
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -23,6 +22,7 @@ from _systems import (
     make_simopt,
 )
 
+from radpair._types import Experiment, SimulationOptions, Spinsystem
 from radpair.core import do_simulation, do_simulation_multicore
 
 __all__ = [
@@ -54,15 +54,15 @@ REFINEMENT_VALUES = [1, 2, 3, 4]
 CPU_CORES_VALUES = [1, 2, 4, 8]
 
 
-def count_active_nuclei(sys: SimpleNamespace) -> int:
+def count_active_nuclei(sys: Spinsystem) -> int:
     """Count the number of active nuclei groups (nuclei_n[i] > 0)."""
     return sum(1 for n in sys.nuclei_n if n > 0)
 
 
 def bench_call(
-    sys: SimpleNamespace,
-    exp: SimpleNamespace,
-    simopt: SimpleNamespace,
+    sys: Spinsystem,
+    exp: Experiment,
+    simopt: SimulationOptions,
 ) -> float:
     """Run a single simulation and return wall-clock time in seconds."""
     start = time.perf_counter()
@@ -71,9 +71,9 @@ def bench_call(
 
 
 def bench_call_multicore(
-    sys: SimpleNamespace,
-    exp: SimpleNamespace,
-    simopt: SimpleNamespace,
+    sys: Spinsystem,
+    exp: Experiment,
+    simopt: SimulationOptions,
 ) -> float:
     """Run a single multicore simulation and return wall-clock time in seconds."""
     start = time.perf_counter()
@@ -82,9 +82,9 @@ def bench_call_multicore(
 
 
 def bench(
-    sys: SimpleNamespace,
-    exp: SimpleNamespace,
-    simopt: SimpleNamespace,
+    sys: Spinsystem,
+    exp: Experiment,
+    simopt: SimulationOptions,
     call_fn=bench_call,
     repeats: int = N_REPEATS,
 ) -> dict[str, float]:
