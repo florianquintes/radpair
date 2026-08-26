@@ -10,9 +10,7 @@ from radpair.functions import (
     get_generalized_Pascal,
     get_multiplicity,
     get_normalized_Pascal,
-    rescale_array,
     tensor_rotation,
-    vector_product_combinations,
 )
 
 # ---------------------------------------------------------------------------
@@ -121,27 +119,6 @@ class TestGetMultiplicity:
 
 
 # ---------------------------------------------------------------------------
-# vector_product_combinations
-# ---------------------------------------------------------------------------
-
-
-class TestVectorProductCombinations:
-    """Tests for :func:`vector_product_combinations`."""
-
-    def test_shape(self):
-        a = np.array([1, 2, 3])
-        b = np.array([4, 5])
-        result = vector_product_combinations(a, b)
-        assert result.shape == (3, 2)
-
-    def test_values(self):
-        a = np.array([1, 2, 3])
-        b = np.array([4, 5, 6])
-        expected = np.outer(a, b)
-        np.testing.assert_array_equal(vector_product_combinations(a, b), expected)
-
-
-# ---------------------------------------------------------------------------
 # get_generalized_Pascal
 # ---------------------------------------------------------------------------
 
@@ -208,36 +185,6 @@ class TestGetNormalizedPascal:
         expected = generalized / generalized.sum()
         result = get_normalized_Pascal(n, s)
         np.testing.assert_allclose(result, expected)
-
-
-# ---------------------------------------------------------------------------
-# rescale_array
-# ---------------------------------------------------------------------------
-
-
-class TestRescaleArray:
-    """Tests for :func:`rescale_array`."""
-
-    def test_default_norm(self):
-        arr = np.array([1.0, 3.0, 4.0])
-        result = rescale_array(arr)
-        np.testing.assert_allclose(result.sum(), 1.0)
-
-    def test_custom_norm(self):
-        arr = np.array([1.0, 3.0, 4.0])
-        result = rescale_array(arr, norm=8.0)
-        np.testing.assert_allclose(result.sum(), 8.0)
-
-    def test_values_correct(self):
-        arr = np.array([1.0, 3.0, 4.0])
-        result = rescale_array(arr)
-        expected = np.array([0.125, 0.375, 0.5])
-        np.testing.assert_allclose(result, expected)
-
-    def test_zero_sum_raises(self):
-        arr = np.zeros(5)
-        with pytest.raises(ZeroDivisionError, match="sum 0"):
-            rescale_array(arr)
 
 
 # ---------------------------------------------------------------------------

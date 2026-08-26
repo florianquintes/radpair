@@ -144,37 +144,6 @@ def get_multiplicity(spin: float) -> int:
     return multiplicity
 
 
-def vector_product_combinations(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Compute the outer product of two 1-D arrays.
-
-    Given two vectors, returns a matrix containing all pairwise products.
-
-    Parameters
-    ----------
-    a : np.ndarray
-        First 1-D array (used as column vector).
-    b : np.ndarray
-        Second 1-D array (used as row vector).
-
-    Returns
-    -------
-    np.ndarray
-        Matrix of shape ``(len(a), len(b))`` containing the products
-        of all permutations of values from ``a`` with values from ``b``.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> vector_product_combinations(np.array([1, 2, 3]), np.array([4, 5, 6]))
-    array([[ 4,  5,  6],
-           [ 8, 10, 12],
-           [12, 15, 18]])
-    """
-    matrix = a.reshape((1, a.shape[0])).T * b
-
-    return matrix
-
-
 @lru_cache
 def get_generalized_Pascal(number: int, spin: float) -> np.ndarray:
     """Compute a generalized Pascal triangle for ``number`` nuclei of spin ``spin``.
@@ -258,37 +227,9 @@ def get_normalized_Pascal(number: int, spin: float) -> np.ndarray:
         Normalized array of relative intensities summing to 1.
     """
     pascal_line = get_generalized_Pascal(number, spin)
-    pascal_line = rescale_array(pascal_line)
+    pascal_line = pascal_line / pascal_line.sum()
 
     return pascal_line
-
-
-def rescale_array(arr: np.ndarray, norm: float = 1.0) -> np.ndarray:
-    """Rescale a 1-D array so that its elements sum to ``norm``.
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        1-D array to be rescaled.
-    norm : float, optional
-        Target sum of all array values (default is 1.0).
-
-    Returns
-    -------
-    np.ndarray
-        Rescaled array.
-
-    Raises
-    ------
-    ZeroDivisionError
-        If the array sums to zero.
-    """
-    if arr.sum() == 0:
-        raise ZeroDivisionError("Can't rescale an array with sum 0!")
-
-    scaled_arr = arr / arr.sum() * norm
-
-    return scaled_arr
 
 
 def get_D_diag(D: float, E: float) -> np.ndarray:
@@ -315,9 +256,7 @@ def get_D_diag(D: float, E: float) -> np.ndarray:
     np.ndarray
         Array of shape ``(3,)`` containing the diagonal elements.
     """
-    D_diag = np.array([D - E, D + E, -2 * D])
-
-    return D_diag
+    return np.array([D - E, D + E, -2 * D])
 
 
 def MHz_2_T(nu: float | np.ndarray, g_tensor: np.ndarray) -> float | np.ndarray:
@@ -647,7 +586,7 @@ def compute_hyperfine_combinations(
         pascal = get_normalized_Pascal(n, I)
         mI_len = mI_vector.size
 
-        hyperfine_matrix = vector_product_combinations(mI_vector, a_projections[i - 1])
+        hyperfine_matrix = np.outer(mI_vector, a_projections[i - 1])
 
         core_data.append((hyperfine_matrix, pascal, mI_len))
         core_types.append(ct)

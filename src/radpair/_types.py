@@ -11,7 +11,7 @@ validated types.  Users construct ``Spinsystem``, ``Experiment``, and
 @author: Florian Quintes
 """
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -172,8 +172,3 @@ class SimulationOptions:
     refinement: int = 1
     cpu_cores: int = 1
     max_chunk_mb: int | None = None
-
-
-def spinsystem_field_names() -> list[str]:
-    """Return the field names of :class:`Spinsystem` in definition order."""
-    return [f.name for f in fields(Spinsystem)]
