@@ -175,17 +175,6 @@ class TestSpinsystemValidation:
 class TestExperiment:
     """Tests for Experiment dataclass."""
 
-    def test_magnetic_field_defaults_to_bz_copy(self):
-        exp = Experiment(B_z=np.linspace(340, 350, 10), freq_mw=9.5e9)
-        np.testing.assert_array_equal(exp.magnetic_field, exp.B_z)
-        assert exp.magnetic_field is not exp.B_z
-
-    def test_explicit_magnetic_field(self):
-        bz = np.linspace(340, 350, 10)
-        mf = np.linspace(340, 350, 20)
-        exp = Experiment(B_z=bz, freq_mw=9.5e9, magnetic_field=mf)
-        assert exp.magnetic_field is mf
-
     def test_is_dataclass(self):
         from dataclasses import is_dataclass
 

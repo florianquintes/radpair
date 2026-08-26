@@ -21,8 +21,8 @@ array operations.
 Capabilities
 ------------
 
-* Simulation of cw-EPR spectra for radical pairs with up to five anisotropic
-  nuclei groups.
+* Simulation of cw-EPR spectra for radical pairs with an arbitrary number
+  of anisotropic nuclei groups.
 * Each nuclei group can be assigned as donor or acceptor.
 * Support for the zero-field splitting (ZFS) tensor with parameters *D* and
   *E*, exchange interaction *J*, and anisotropic *g*-tensors.
@@ -41,11 +41,17 @@ Module Overview
    * - ``radpair.core``
      - Entry points for single-core (``do_simulation``) and multi-core
        (``do_simulation_multicore``) simulation.
-   * - ``radpair.classes``
-     - ``Matrix`` class for tensor rotation and ``Core`` class representing
-       a group of chemically equivalent nuclei.
-   * - ``radpair.functions``
-     - Math helpers: unit conversion, Pascal triangles, tensor rotation,
-       and spherical grid generation.
-   * - ``radpair._wrappers``
-     - Decorators for timing, benchmarking, and multi-core parallelisation.
+   * - ``radpair._types``
+     - Typed dataclasses (``Spinsystem``, ``Experiment``,
+       ``SimulationOptions``) with validation.
+   * - ``radpair.hamiltonian``
+     - Tensor rotation, unit conversion, resonance-field and intensity
+       computation (physics math).
+   * - ``radpair.hyperfine``
+     - Multiplicities, generalized Pascal triangles, and hyperfine
+       combination logic.
+   * - ``radpair.pipeline``
+     - Unit conversion, orientation-grid setup, tensor construction and
+       rotation (pipeline stages 1–4).
+   * - ``radpair.summation``
+     - Chunked Gaussian line-shape summation and memory management.

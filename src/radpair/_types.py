@@ -11,7 +11,7 @@ validated types.  Users construct ``Spinsystem``, ``Experiment``, and
 @author: Florian Quintes
 """
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -138,19 +138,10 @@ class Experiment:
         Magnetic field axis for the output spectrum in milliTesla.
     freq_mw : float
         Microwave frequency in Hz.
-    magnetic_field : np.ndarray or None
-        Magnetic field sweep axis in milliTesla (used by the multicore
-        wrapper to split work across processes).  If ``None``, defaults
-        to a copy of ``B_z``.
     """
 
     B_z: np.ndarray
     freq_mw: float
-    magnetic_field: np.ndarray | None = None
-
-    def __post_init__(self) -> None:
-        if self.magnetic_field is None:
-            self.magnetic_field = self.B_z.copy()
 
 
 @dataclass
@@ -181,8 +172,3 @@ class SimulationOptions:
     refinement: int = 1
     cpu_cores: int = 1
     max_chunk_mb: int | None = None
-
-
-def spinsystem_field_names() -> list[str]:
-    """Return the field names of :class:`Spinsystem` in definition order."""
-    return [f.name for f in fields(Spinsystem)]

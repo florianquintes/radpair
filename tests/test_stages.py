@@ -1,4 +1,4 @@
-"""Unit tests for the composable simulation stages in :mod:`radpair.functions`.
+"""Unit tests for the composable simulation stages.
 
 Each of the 8 functions extracted from ``do_simulation`` is tested
 independently for shape, dtype, value-range, and known-value cases.
@@ -9,20 +9,23 @@ systems, experiments, and simulation options.
 import numpy as np
 import pytest
 
-from radpair.functions import (
+from radpair.hamiltonian import (
     _GAMMA_E_REF,
     _GAUSSIAN_FWHM_TO_SIGMA,
-    _compute_chunk_size,
-    _get_available_ram,
-    assemble_spectrum,
-    build_tensors,
-    compute_hyperfine_combinations,
     compute_intensities,
     compute_resonance_fields,
-    gaussian_summation,
+)
+from radpair.hyperfine import compute_hyperfine_combinations
+from radpair.pipeline import (
+    build_tensors,
     prepare_spinsystem,
     rotate_tensors,
     setup_orientation_grid,
+)
+from radpair.summation import (
+    _compute_chunk_size,
+    _get_available_ram,
+    gaussian_summation,
 )
 
 # ---------------------------------------------------------------------------
@@ -51,7 +54,7 @@ class TestPrepareSpinsystem:
 
     def test_a_tensors_converted(self, minimal_spinsystem, experiment):
         """A_tensors[0] (donor) should be converted from MHz to angular frequency with 0.5 factor."""
-        from radpair.functions import MHz_2_T
+        from radpair.hamiltonian import MHz_2_T
 
         Sys, _, _ = prepare_spinsystem(
             minimal_spinsystem, experiment.freq_mw, experiment.B_z
@@ -62,7 +65,7 @@ class TestPrepareSpinsystem:
 
     def test_d_e_j_ex_converted(self, full_spinsystem, experiment):
         """D, E, J_ex should be converted from MHz to angular frequency."""
-        from radpair.functions import MHz_2_T
+        from radpair.hamiltonian import MHz_2_T
 
         Sys, _, _ = prepare_spinsystem(
             full_spinsystem, experiment.freq_mw, experiment.B_z
@@ -214,7 +217,7 @@ class TestBuildTensors:
 
     def test_d_tensor_diag_matches_get_D_diag(self, full_spinsystem, experiment):
         """D tensor diagonal should match get_D_diag(Sys.D, Sys.E)."""
-        from radpair.functions import get_D_diag
+        from radpair.hamiltonian import get_D_diag
 
         Sys, _, _ = prepare_spinsystem(
             full_spinsystem, experiment.freq_mw, experiment.B_z
@@ -444,150 +447,6 @@ class TestComputeIntensities:
         quantum_beat = np.ones((5, 2, 4))
         intensities = compute_intensities(delta_omega, quantum_beat)
         np.testing.assert_allclose(intensities, 0.0)
-
-
-# ---------------------------------------------------------------------------
-# assemble_spectrum
-# ---------------------------------------------------------------------------
-
-
-class TestAssembleSpectrum:
-    """Tests for :func:`assemble_spectrum`."""
-
-    @pytest.fixture
-    def _assembly_inputs(self, full_spinsystem, experiment, simopt_basic):
-        """Prepare all inputs for assemble_spectrum by running the pipeline stages."""
-        Sys, freq_mw, _ = prepare_spinsystem(
-            full_spinsystem, experiment.freq_mw, experiment.B_z
-        )
-        theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_basic.knots, simopt_basic.refinement
-        )
-        all_tensors, frame_angles = build_tensors(Sys)
-        g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
-        A_1, A_2, spec_weights = compute_hyperfine_combinations(Sys, a_projections)
-        res_fields, delta_omega, quantum_beat, widths = compute_resonance_fields(
-            Sys.J_ex, freq_mw, g1, g2, D, A_1, A_2
-        )
-        intensities = compute_intensities(delta_omega, quantum_beat)
-        return {
-            "res_fields": res_fields,
-            "intensities": intensities,
-            "widths": widths,
-            "spec_weights": spec_weights,
-            "original_width_gauss": full_spinsystem.width_gauss,
-            "original_B_z": experiment.B_z,
-            "theta_angles": theta,
-            "phi_angles": phi,
-            "theta_fine": theta_fine,
-            "phi_fine": phi_fine,
-            "weights": weights,
-            "interpolation_mode": interp_mode,
-        }
-
-    def test_output_shape(self, _assembly_inputs, experiment):
-        """Output shape should match the original B_z."""
-        intensity = assemble_spectrum(**_assembly_inputs)
-        assert intensity.shape == experiment.B_z.shape
-
-    def test_no_nans(self, _assembly_inputs):
-        """Output should not contain NaNs."""
-        intensity = assemble_spectrum(**_assembly_inputs)
-        assert not np.any(np.isnan(intensity))
-
-    def test_real_valued(self, _assembly_inputs):
-        """Output should be real-valued."""
-        intensity = assemble_spectrum(**_assembly_inputs)
-        assert not np.iscomplexobj(intensity)
-
-    def test_has_positive_and_negative(self, _assembly_inputs):
-        """Spin-correlated RP should have both absorptive and emissive lines."""
-        intensity = assemble_spectrum(**_assembly_inputs)
-        assert np.any(intensity > 0)
-        assert np.any(intensity < 0)
-
-
-# ---------------------------------------------------------------------------
-# End-to-end: pipeline matches do_simulation
-# ---------------------------------------------------------------------------
-
-
-class TestPipelineMatchesDoSimulation:
-    """Verify that calling the 8 stages manually produces the same result as do_simulation."""
-
-    def test_pipeline_matches_single_call(
-        self, full_spinsystem, experiment, simopt_basic
-    ):
-        from radpair.core import do_simulation
-
-        expected = do_simulation(full_spinsystem, experiment, simopt_basic)
-
-        Sys, freq_mw, _ = prepare_spinsystem(
-            full_spinsystem, experiment.freq_mw, experiment.B_z
-        )
-        theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_basic.knots, simopt_basic.refinement
-        )
-        all_tensors, frame_angles = build_tensors(Sys)
-        g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
-        A_1, A_2, spec_weights = compute_hyperfine_combinations(Sys, a_projections)
-        res_fields, delta_omega, quantum_beat, widths = compute_resonance_fields(
-            Sys.J_ex, freq_mw, g1, g2, D, A_1, A_2
-        )
-        intensities = compute_intensities(delta_omega, quantum_beat)
-        result = assemble_spectrum(
-            res_fields,
-            intensities,
-            widths,
-            spec_weights,
-            full_spinsystem.width_gauss,
-            experiment.B_z,
-            theta,
-            phi,
-            theta_fine,
-            phi_fine,
-            weights,
-            interp_mode,
-        )
-
-        np.testing.assert_allclose(result, expected, rtol=1e-10, atol=1e-12)
-
-    def test_pipeline_matches_with_interpolation(
-        self, minimal_spinsystem, experiment, simopt_interpolation
-    ):
-        from radpair.core import do_simulation
-
-        expected = do_simulation(minimal_spinsystem, experiment, simopt_interpolation)
-
-        Sys, freq_mw, _ = prepare_spinsystem(
-            minimal_spinsystem, experiment.freq_mw, experiment.B_z
-        )
-        theta, phi, theta_fine, phi_fine, weights, interp_mode = setup_orientation_grid(
-            simopt_interpolation.knots, simopt_interpolation.refinement
-        )
-        all_tensors, frame_angles = build_tensors(Sys)
-        g1, g2, D, a_projections = rotate_tensors(all_tensors, frame_angles, theta, phi)
-        A_1, A_2, spec_weights = compute_hyperfine_combinations(Sys, a_projections)
-        res_fields, delta_omega, quantum_beat, widths = compute_resonance_fields(
-            Sys.J_ex, freq_mw, g1, g2, D, A_1, A_2
-        )
-        intensities = compute_intensities(delta_omega, quantum_beat)
-        result = assemble_spectrum(
-            res_fields,
-            intensities,
-            widths,
-            spec_weights,
-            minimal_spinsystem.width_gauss,
-            experiment.B_z,
-            theta,
-            phi,
-            theta_fine,
-            phi_fine,
-            weights,
-            interp_mode,
-        )
-
-        np.testing.assert_allclose(result, expected, rtol=1e-10, atol=1e-12)
 
 
 # ---------------------------------------------------------------------------
