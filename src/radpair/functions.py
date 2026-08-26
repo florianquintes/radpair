@@ -17,7 +17,6 @@ from itertools import product
 import numpy as np
 import scipy.constants as constant
 from eprbase import grid, spectra
-from eprbase import interpolation as interp
 
 from radpair._types import Spinsystem
 
@@ -984,95 +983,3 @@ def _compute_chunk_size(
 
     chunk_size = int(max_bytes // bytes_per_peak)
     return max(1, min(chunk_size, total_peaks))
-
-
-def assemble_spectrum(
-    res_fields: np.ndarray,
-    intensities: np.ndarray,
-    widths: np.ndarray,
-    spec_weights: list[float],
-    original_width_gauss: float,
-    original_B_z: np.ndarray,
-    theta_angles: np.ndarray,
-    phi_angles: np.ndarray,
-    theta_fine: np.ndarray | None,
-    phi_fine: np.ndarray | None,
-    weights: np.ndarray,
-    interpolation_mode: bool,
-    max_chunk_mb: int | None = None,
-) -> np.ndarray:
-    """Assemble the final spectrum from resonance data.
-
-    Converts resonance fields back to milliTesla, optionally interpolates
-    onto a finer grid, applies spectral weights and linewidth, and
-    performs the final summation via chunked Gaussian evaluation.
-
-    Parameters
-    ----------
-    res_fields : np.ndarray
-        Resonance fields, shape ``(N, n_comb, 4)``.
-    intensities : np.ndarray
-        Line intensities, shape ``(N, n_comb, 4)``.
-    widths : np.ndarray
-        Transition widths, shape ``(N, 4, n_comb)``.
-    spec_weights : list[float]
-        Spectral weights for each combination.
-    original_width_gauss : float
-        Original (unmodified) Gaussian linewidth in milliTesla.
-    original_B_z : np.ndarray
-        Original magnetic field axis in milliTesla.
-    theta_angles : np.ndarray
-        Polar angles of the coarse grid.
-    phi_angles : np.ndarray
-        Azimuthal angles of the coarse grid.
-    theta_fine : np.ndarray or None
-        Polar angles of the fine grid (``None`` if no interpolation).
-    phi_fine : np.ndarray or None
-        Azimuthal angles of the fine grid (``None`` if no interpolation).
-    weights : np.ndarray
-        Integration weights.
-    interpolation_mode : bool
-        Whether interpolation is enabled.
-    max_chunk_mb : int or None, optional
-        Maximum memory in MB for a single Gaussian summation chunk.
-        ``0`` or negative disables chunking.  ``None`` auto-detects
-        from available RAM.  See :func:`gaussian_summation`.
-
-    Returns
-    -------
-    np.ndarray
-        Real-valued intensity array matching the shape of
-        ``original_B_z``.
-    """
-    fields = res_fields / _GAMMA_E_REF * 1e3
-    transitions = np.zeros((*fields.shape, 2))
-
-    shp = (theta_angles.size, fields.shape[1] * fields.shape[2])
-    fields = fields.reshape(shp)
-    widths = widths.reshape(shp)
-    intensities = intensities.reshape(shp)
-    transitions = transitions.reshape((*shp, 2))
-
-    if interpolation_mode:
-        data = (fields, intensities, widths, transitions)
-
-        interp_ = interp.Interpolator(theta_angles, phi_angles, data)
-
-        fields = interp_.get_positions(theta_fine, phi_fine)
-        intensities = interp_.get_intensities(theta_fine, phi_fine)
-        widths = interp_.get_widths(theta_fine, phi_fine)
-        transitions = interp_.get_transitions(theta_fine.shape[0])
-
-    spec_weights_arr = np.repeat(np.array([spec_weights]), 4)
-    spec_weights_arr = spec_weights_arr.reshape((1, spec_weights_arr.size))
-
-    intensity = gaussian_summation(
-        fields,
-        intensities * spec_weights_arr,
-        original_width_gauss * widths,
-        weights,
-        original_B_z,
-        max_chunk_mb=max_chunk_mb,
-    )
-
-    return np.nan_to_num(intensity)

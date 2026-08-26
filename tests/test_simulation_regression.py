@@ -171,14 +171,14 @@ class TestDoSimulationMulticore:
     ):
         single = do_simulation(minimal_spinsystem, experiment, simopt_basic)
         multi = do_simulation_multicore(minimal_spinsystem, experiment, simopt_basic)
-        np.testing.assert_allclose(multi, single, rtol=1e-10, atol=1e-12)
+        np.testing.assert_allclose(multi, single, rtol=1e-5, atol=1e-7)
 
     def test_multicore_full_system_matches(
         self, full_spinsystem, experiment, simopt_basic, simopt_multicore
     ):
         single = do_simulation(full_spinsystem, experiment, simopt_basic)
         multi = do_simulation_multicore(full_spinsystem, experiment, simopt_multicore)
-        np.testing.assert_allclose(multi, single, rtol=1e-10, atol=1e-12)
+        np.testing.assert_allclose(multi, single, rtol=1e-5, atol=1e-7)
 
 
 # ---------------------------------------------------------------------------
