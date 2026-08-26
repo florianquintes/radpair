@@ -138,19 +138,10 @@ class Experiment:
         Magnetic field axis for the output spectrum in milliTesla.
     freq_mw : float
         Microwave frequency in Hz.
-    magnetic_field : np.ndarray or None
-        Magnetic field sweep axis in milliTesla (used by the multicore
-        wrapper to split work across processes).  If ``None``, defaults
-        to a copy of ``B_z``.
     """
 
     B_z: np.ndarray
     freq_mw: float
-    magnetic_field: np.ndarray | None = None
-
-    def __post_init__(self) -> None:
-        if self.magnetic_field is None:
-            self.magnetic_field = self.B_z.copy()
 
 
 @dataclass

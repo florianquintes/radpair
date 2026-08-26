@@ -13,7 +13,7 @@ from radpair.core import do_simulation, do_simulation_multicore
 
 SPINSYSTEM_REQUIRED_ATTRS = spinsystem_field_names()
 
-EXP_REQUIRED_ATTRS = ["B_z", "freq_mw", "magnetic_field"]
+EXP_REQUIRED_ATTRS = ["B_z", "freq_mw"]
 
 SIMOPT_REQUIRED_ATTRS = ["knots", "refinement", "cpu_cores", "max_chunk_mb"]
 
