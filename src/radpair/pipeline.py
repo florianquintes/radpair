@@ -158,11 +158,8 @@ def setup_orientation_grid(
         phi_fine = None
         weights = grid_.get_areas()[np.newaxis, :]
 
-    try:
-        theta_angles.shape[0]
-    except IndexError:
-        theta_angles = np.array([theta_angles])
-        phi_angles = np.array([phi_angles])
+    theta_angles = np.atleast_1d(theta_angles)
+    phi_angles = np.atleast_1d(phi_angles)
 
     return theta_angles, phi_angles, theta_fine, phi_fine, weights, interpolation_mode
 
