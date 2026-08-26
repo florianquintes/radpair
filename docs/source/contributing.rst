@@ -13,12 +13,8 @@ The package uses a ``src`` layout. All package code lives under
 
 * ``core.py`` — entry points ``do_simulation`` and
   ``do_simulation_multicore``.
-* ``classes.py`` — ``Matrix`` (tensor rotation) and ``Core`` (nuclei group)
-  helper classes.
 * ``functions.py`` — math helpers (unit conversion, Pascal triangles, tensor
   rotation, grid generation).
-* ``_wrappers.py`` — decorators: ``timer``, ``function_benchmark``,
-  ``multicore`` (splits field axis across CPU cores).
 
 ``__init__.py`` is empty; there are no public re-exports. Import directly
 from submodules. The package depends on `eprbase <https://pypi.org/project/eprbase/>`_
