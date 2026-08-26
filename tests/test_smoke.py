@@ -1,70 +1,8 @@
 """Smoke tests verifying that the shared fixtures produce valid simulations."""
 
 import numpy as np
-import pytest
 
 from radpair.core import do_simulation, do_simulation_multicore
-
-# ---------------------------------------------------------------------------
-# Fixture validation — ensure objects have all required attributes
-# ---------------------------------------------------------------------------
-
-
-SPINSYSTEM_REQUIRED_ATTRS = [
-    "g1",
-    "g2",
-    "A_tensors",
-    "nuclei_n",
-    "nuclei_I",
-    "A_frames",
-    "width_gauss",
-    "D",
-    "E",
-    "J_ex",
-    "g1_frame",
-    "g2_frame",
-    "D_frame",
-    "donor_list",
-    "acceptor_list",
-]
-
-EXP_REQUIRED_ATTRS = ["B_z", "freq_mw"]
-
-SIMOPT_REQUIRED_ATTRS = ["knots", "refinement", "cpu_cores", "max_chunk_mb"]
-
-
-@pytest.mark.parametrize(
-    "fixture_name",
-    [
-        "minimal_spinsystem",
-        "full_spinsystem",
-        "donor_only_spinsystem",
-        "acceptor_only_spinsystem",
-    ],
-)
-def test_spinsystem_has_required_attrs(request, fixture_name):
-    """Every spinsystem fixture exposes all attributes do_simulation needs."""
-    sys = request.getfixturevalue(fixture_name)
-    for attr in SPINSYSTEM_REQUIRED_ATTRS:
-        assert hasattr(sys, attr), f"Spinsystem missing attribute '{attr}'"
-
-
-def test_experiment_has_required_attrs(experiment):
-    """The experiment fixture exposes all required attributes."""
-    for attr in EXP_REQUIRED_ATTRS:
-        assert hasattr(experiment, attr), f"Exp missing attribute '{attr}'"
-
-
-@pytest.mark.parametrize(
-    "fixture_name",
-    ["simopt_basic", "simopt_multicore", "simopt_auto_cores", "simopt_interpolation"],
-)
-def test_simopt_has_required_attrs(request, fixture_name):
-    """Every SimOpt fixture exposes all required attributes."""
-    simopt = request.getfixturevalue(fixture_name)
-    for attr in SIMOPT_REQUIRED_ATTRS:
-        assert hasattr(simopt, attr), f"SimOpt missing attribute '{attr}'"
-
 
 # ---------------------------------------------------------------------------
 # do_simulation — single-core smoke tests

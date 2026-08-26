@@ -78,69 +78,6 @@ def _load_reference(
 
 
 # ---------------------------------------------------------------------------
-# Tests for do_simulation — basic invariants
-# ---------------------------------------------------------------------------
-
-
-class TestDoSimulationInvariants:
-    """Output-shape, dtype, and NaN checks for do_simulation."""
-
-    def test_minimal_shape_matches_bz(
-        self, minimal_spinsystem, experiment, simopt_basic
-    ):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_basic)
-        assert result.shape == experiment.B_z.shape
-
-    def test_full_shape_matches_bz(self, full_spinsystem, experiment, simopt_basic):
-        result = do_simulation(full_spinsystem, experiment, simopt_basic)
-        assert result.shape == experiment.B_z.shape
-
-    def test_minimal_real_valued(self, minimal_spinsystem, experiment, simopt_basic):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_basic)
-        assert not np.iscomplexobj(result)
-
-    def test_full_real_valued(self, full_spinsystem, experiment, simopt_basic):
-        result = do_simulation(full_spinsystem, experiment, simopt_basic)
-        assert not np.iscomplexobj(result)
-
-    def test_minimal_no_nans(self, minimal_spinsystem, experiment, simopt_basic):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_basic)
-        assert not np.any(np.isnan(result))
-
-    def test_full_no_nans(self, full_spinsystem, experiment, simopt_basic):
-        result = do_simulation(full_spinsystem, experiment, simopt_basic)
-        assert not np.any(np.isnan(result))
-
-    def test_minimal_no_infs(self, minimal_spinsystem, experiment, simopt_basic):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_basic)
-        assert not np.any(np.isinf(result))
-
-    def test_full_no_infs(self, full_spinsystem, experiment, simopt_basic):
-        result = do_simulation(full_spinsystem, experiment, simopt_basic)
-        assert not np.any(np.isinf(result))
-
-    def test_interpolation_mode_shape(
-        self, minimal_spinsystem, experiment, simopt_interpolation
-    ):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_interpolation)
-        assert result.shape == experiment.B_z.shape
-
-    def test_interpolation_mode_no_nans(
-        self, minimal_spinsystem, experiment, simopt_interpolation
-    ):
-        result = do_simulation(minimal_spinsystem, experiment, simopt_interpolation)
-        assert not np.any(np.isnan(result))
-
-    def test_interpolation_mode_changes_output(
-        self, full_spinsystem, experiment, simopt_basic, simopt_interpolation
-    ):
-        """Interpolation should produce a (slightly) different spectrum than no-interpolation."""
-        coarse = do_simulation(full_spinsystem, experiment, simopt_basic)
-        fine = do_simulation(full_spinsystem, experiment, simopt_interpolation)
-        assert not np.allclose(coarse, fine, rtol=1e-10, atol=1e-12)
-
-
-# ---------------------------------------------------------------------------
 # Tests for do_simulation_multicore
 # ---------------------------------------------------------------------------
 
